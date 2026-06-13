@@ -13,53 +13,62 @@ const MIME = {
 
 // ── DATABASE (sql.js — pur JS, zéro compilation) ──────────────────────────────
 const DB_FILE = path.join(__dirname, "battlemap.db");
-let db;
+let db = null;
+let dbReady = false;
 
 function saveDb() {
+  if (!db) return;
   try { fs.writeFileSync(DB_FILE, Buffer.from(db.export())); }
   catch(e) { console.warn("Erreur sauvegarde DB:", e.message); }
 }
 let _dbTimer=null;
 function scheduleDbSave(){ clearTimeout(_dbTimer); _dbTimer=setTimeout(saveDb,2000); }
 
-function dbRun(sql, p=[]){ db.run(sql,p); scheduleDbSave(); }
+function dbRun(sql, p=[]){ if(db) { db.run(sql,p); scheduleDbSave(); } }
 function dbGet(sql, p=[]){
+  if(!db) return null;
   const s=db.prepare(sql); s.bind(p);
   const row=s.step()?s.getAsObject():null; s.free(); return row;
 }
 function dbAll(sql, p=[]){
+  if(!db) return [];
   const s=db.prepare(sql); s.bind(p);
   const rows=[]; while(s.step())rows.push(s.getAsObject()); s.free(); return rows;
 }
 
 async function initDb(){
-  const SQL=await initSqlJs();
-  db = fs.existsSync(DB_FILE)
-    ? new SQL.Database(fs.readFileSync(DB_FILE))
-    : new SQL.Database();
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL COLLATE NOCASE,
-      password TEXT NOT NULL,
-      created_at INTEGER DEFAULT(strftime('%s','now'))
-    );
-    CREATE TABLE IF NOT EXISTS sessions(
-      token TEXT PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      created_at INTEGER DEFAULT(strftime('%s','now'))
-    );
-    CREATE TABLE IF NOT EXISTS campaigns(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      lobby_code TEXT UNIQUE NOT NULL,
-      state TEXT NOT NULL DEFAULT '{}',
-      updated_at INTEGER DEFAULT(strftime('%s','now'))
-    );
-  `);
-  saveDb();
-  console.log(fs.existsSync(DB_FILE)?"💾  DB chargée":"💾  Nouvelle DB créée");
+  try {
+    const SQL = await initSqlJs();
+    db = fs.existsSync(DB_FILE)
+      ? new SQL.Database(fs.readFileSync(DB_FILE))
+      : new SQL.Database();
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL COLLATE NOCASE,
+        password TEXT NOT NULL,
+        created_at INTEGER DEFAULT(strftime('%s','now'))
+      );
+      CREATE TABLE IF NOT EXISTS sessions(
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at INTEGER DEFAULT(strftime('%s','now'))
+      );
+      CREATE TABLE IF NOT EXISTS campaigns(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        lobby_code TEXT UNIQUE NOT NULL,
+        state TEXT NOT NULL DEFAULT '{}',
+        updated_at INTEGER DEFAULT(strftime('%s','now'))
+      );
+    `);
+    saveDb();
+    dbReady = true;
+    console.log(fs.existsSync(DB_FILE) ? "💾  DB chargée" : "💾  Nouvelle DB créée");
+  } catch (err) {
+    console.error("Impossible d'initialiser la DB:", err);
+  }
 }
 
 function genToken(){ return crypto.randomBytes(32).toString("hex"); }
@@ -111,7 +120,12 @@ function readBody(req){ return new Promise(res=>{let d="";req.on("data",c=>d+=c)
 function json(res,status,obj){res.writeHead(status,{"Content-Type":"application/json"});res.end(JSON.stringify(obj));}
 
 const httpServer = http.createServer(async(req,res)=>{
-  const url=new URL(req.url,"http://localhost");
+  // Sécurité anti-crash si la DB n'est pas encore chargée
+  if (!dbReady) {
+    return json(res, 503, { error: "Serveur en cours de démarrage, réessaye." });
+  }
+
+  const url=new URL(req.url, `http://${req.headers.host || "localhost"}`);
   const body=await readBody(req);
 
   if(req.method==="POST"&&url.pathname==="/api/register"){
@@ -177,7 +191,7 @@ const httpServer = http.createServer(async(req,res)=>{
     return json(res,200,{ok:true});
   }
 
-  // Static
+  // Static files handler
   const filePath=path.join(__dirname,url.pathname==="/"?"index.html":url.pathname);
   fs.readFile(filePath,(err,data)=>{
     if(err){res.writeHead(404);return res.end("Not found");}
@@ -196,7 +210,6 @@ wss.on("connection",ws=>{
     const lobby=lobbies[currentLobby];
 
     switch(msg.type){
-
       case"JOIN_LOBBY":{
         const code=msg.code?.toUpperCase();
         loadLobby(code);
@@ -343,9 +356,16 @@ wss.on("connection",ws=>{
 
 // ── START ─────────────────────────────────────────────────────────────────────
 const PORT=process.env.PORT||3000;
+
 initDb().then(()=>{
-  httpServer.listen(PORT,()=>{
-    console.log(`\n⚔  Battlemap  →  http://localhost:${PORT}`);
-    console.log(`🗄  Base       →  battlemap.db\n`);
-  });
+  // On ne lance l'écoute du port que si on n'est pas dans l'environnement de build Vercel
+  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    httpServer.listen(PORT,()=>{
+      console.log(`\n⚔  Battlemap  →  http://localhost:${PORT}`);
+      console.log(`🗄  Base       →  battlemap.db\n`);
+    });
+  }
 });
+
+// Indispensable pour que Vercel trouve le point d'entrée de l'application
+module.exports = httpServer;
