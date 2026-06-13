@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
+    },
+    "server.cjs": {
+      "includeFiles": "node_modules/sql.js/dist/sql-wasm.wasm"
+    }
+  }
+}
