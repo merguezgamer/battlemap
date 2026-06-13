@@ -139,8 +139,10 @@ canvas{display:block;position:absolute;top:0;left:0;}
 #obs-clear{width:100%;margin-top:6px;background:transparent;border:1px solid var(--bord);border-radius:6px;color:var(--red);padding:7px;font-size:.78rem;cursor:pointer;font-family:inherit;}
 
 /* Obstacle popup */
-#obs-popup{position:absolute;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;width:min(220px,90vw);box-shadow:0 8px 32px #00000088;}
-#obs-popup h4{color:var(--gold);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;padding-right:20px;}
+#obs-popup{position:fixed;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;width:min(230px,96vw);box-shadow:0 8px 40px #00000099;}
+@media(max-width:540px){
+  #obs-popup{left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;border-radius:16px 16px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+}
 .obs-popup-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
 .obs-popup-row label{font-size:.7rem;color:var(--muted);width:54px;flex-shrink:0;}
 .obs-popup-row input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;}
@@ -153,9 +155,9 @@ canvas{display:block;position:absolute;top:0;left:0;}
 @media(max-width:500px){
   #obs-popup{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;border-radius:14px 14px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom));}
 }
-#token-popup{position:absolute;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;width:min(280px,92vw);box-shadow:0 8px 32px #00000088;max-height:85vh;overflow-y:auto;}
-@media(max-width:500px){
-  #token-popup{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;border-radius:14px 14px 0 0;max-height:80vh;padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+#token-popup{position:fixed;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;width:min(300px,96vw);box-shadow:0 8px 40px #00000099;max-height:90dvh;overflow-y:auto;}
+@media(max-width:540px){
+  #token-popup{left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;border-radius:16px 16px 0 0;max-height:82dvh;padding-bottom:calc(16px + env(safe-area-inset-bottom));}
 }
 #token-popup h4{color:var(--gold);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;padding-right:20px;}
 .tp-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;}
@@ -184,7 +186,10 @@ canvas{display:block;position:absolute;top:0;left:0;}
 #tp-save{width:100%;background:var(--gold);color:#0d0f14;border:none;border-radius:6px;padding:7px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem;margin-top:4px;}
 
 /* Range popup */
-#range-popup{position:absolute;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;min-width:210px;box-shadow:0 8px 32px #00000088;}
+#range-popup{position:fixed;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:14px;display:none;z-index:50;width:min(230px,96vw);box-shadow:0 8px 40px #00000099;}
+@media(max-width:540px){
+  #range-popup{left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;border-radius:16px 16px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+}
 #range-popup h4{color:var(--gold);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;}
 .range-colors{display:flex;gap:5px;align-items:center;margin-bottom:9px;}
 .range-colors span{font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
@@ -1296,11 +1301,39 @@ function openTokenPopup(tokenId,sx,sy){
   document.querySelectorAll(".cond-btn").forEach(btn=>{
     btn.classList.toggle("on",(t.conditions||[]).includes(btn.dataset.id));});
   document.getElementById("tp-notes").value=t.notes||"";
+
   const pop=document.getElementById("token-popup");
-  const wR=document.getElementById("wrap").getBoundingClientRect();
-  let px=sx+10,py=sy-10;pop.style.display="block";
-  if(px+270>wR.width)px=sx-270;if(py+340>wR.height)py=Math.max(4,wR.height-344);
-  pop.style.left=Math.max(4,px)+"px";pop.style.top=Math.max(4,py)+"px";
+  // Afficher d'abord pour mesurer la vraie taille
+  pop.style.visibility="hidden";
+  pop.style.display="block";
+  pop.style.left="0px";pop.style.top="0px";
+
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const pw=pop.offsetWidth,ph=pop.offsetHeight;
+
+  // Sur mobile (<540px) : bottom sheet géré par CSS, pas besoin de positionner
+  if(vw<=540){pop.style.visibility="visible";return;}
+
+  // Desktop : placer près du clic, décaler si ça déborde
+  // Convertir sx/sy (coords canvas) en coords viewport
+  const canvasRect=cMain.getBoundingClientRect();
+  const vx=canvasRect.left+sx, vy=canvasRect.top+sy;
+
+  let left=vx+12;
+  let top=vy-ph/2; // centré verticalement sur le clic
+
+  // Ne pas dépasser à droite
+  if(left+pw>vw-8)left=vx-pw-12;
+  // Ne pas dépasser à gauche
+  if(left<8)left=8;
+  // Ne pas dépasser en bas
+  if(top+ph>vh-8)top=vh-ph-8;
+  // Ne pas dépasser en haut
+  if(top<8)top=8;
+
+  pop.style.left=left+"px";
+  pop.style.top=top+"px";
+  pop.style.visibility="visible";
 }
 function closeTokenPopup(){document.getElementById("token-popup").style.display="none";tokenPopupTarget=null;}
 function saveTokenPopup(){
@@ -1339,10 +1372,8 @@ function openRangePopup(tokenId,sx,sy){
   clr.onclick=()=>{tokens[tokenId].ranges=[];send({type:"SET_RANGES",tokenId,ranges:[]});drawAll();closeRangePopup();};
   pre.appendChild(clr);
   document.getElementById("rp-input").value="";
-  const wR=document.getElementById("wrap").getBoundingClientRect();
-  let px=sx+10,py=sy-10;const pop=document.getElementById("range-popup");pop.style.display="block";
-  if(px+225>wR.width)px=sx-225;if(py+220>wR.height)py=sy-220;
-  pop.style.left=Math.max(4,px)+"px";pop.style.top=Math.max(4,py)+"px";
+  const pop=document.getElementById("range-popup");pop.style.display="block";
+  positionPopup(pop,sx,sy);
 }
 function closeRangePopup(){document.getElementById("range-popup").style.display="none";rangeTarget=null;}
 function addRange(tokenId,m){
@@ -1475,6 +1506,22 @@ function buildObsBank(){
   const clr=document.createElement("button");clr.id="obs-clear";clr.textContent="✕ Effacer tous les obstacles";
   clr.onclick=()=>{if(confirm("Effacer tous les obstacles ?"))clearObstacles();};bank.appendChild(clr);
 }
+function positionPopup(pop,sx,sy){
+  // sx/sy = coords dans le canvas
+  pop.style.visibility="hidden";pop.style.left="0px";pop.style.top="0px";
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const pw=pop.offsetWidth,ph=pop.offsetHeight;
+  if(vw<=540){pop.style.visibility="visible";return;}
+  const canvasRect=cMain.getBoundingClientRect();
+  let left=canvasRect.left+sx+12;
+  let top=canvasRect.top+sy-ph/2;
+  if(left+pw>vw-8)left=canvasRect.left+sx-pw-12;
+  if(left<8)left=8;
+  if(top+ph>vh-8)top=vh-ph-8;
+  if(top<8)top=8;
+  pop.style.left=left+"px";pop.style.top=top+"px";pop.style.visibility="visible";
+}
+
 function openObsPopup(obsId,sx,sy){
   if(!isMJ)return;
   selectedObs=obsId;
@@ -1484,11 +1531,8 @@ function openObsPopup(obsId,sx,sy){
   document.getElementById("obs-scale-val").textContent=(o.scale||1)+"×";
   document.getElementById("obs-rot-range").value=o.rotation||0;
   document.getElementById("obs-rot-val").textContent=(o.rotation||0)+"°";
-  const pop=document.getElementById("obs-popup");
-  const wR=document.getElementById("wrap").getBoundingClientRect();
-  let px=sx+10,py=sy-10;pop.style.display="block";
-  if(px+230>wR.width)px=sx-230;if(py+180>wR.height)py=sy-180;
-  pop.style.left=Math.max(4,px)+"px";pop.style.top=Math.max(4,py)+"px";
+  const pop=document.getElementById("obs-popup");pop.style.display="block";
+  positionPopup(pop,sx,sy);
   drawAll();
 }
 function closeObsPopup(){
