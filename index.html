@@ -757,7 +757,10 @@ function handleMsg(msg){
 
 function applyState(s){
   hostId=s.hostId; playerIds=s.playerIds||[]; playerNames=s.playerNames||{};
-  bgUrl=s.imageUrl||""; initiatives=s.initiatives||[];
+  bgUrl=s.imageUrl||"";
+  const rawInit=s.initiatives||[];
+  initiatives=Array.isArray(rawInit)?rawInit:Object.values(rawInit);
+  currentTurn=0;
   tokens={}; for(const[id,t]of Object.entries(s.tokens||{}))
     tokens[id]={...t,id:t.tokenId||id,ranges:t.ranges||[],notes:t.notes||"",
       hp:t.hp??null,maxHp:t.maxHp??null,size:t.size||"Medium",sizeN:t.sizeN||1,conditions:t.conditions||[]};
@@ -1094,9 +1097,29 @@ function obsAt(wx,wy){
   return null;
 }
 
+// Double-tap / long press pour ouvrir le popup pion sur mobile
+let _tapTimer=null,_tapTarget=null;
 cMain.addEventListener("pointerdown",e=>{e.preventDefault();onDown(e);});
 cMain.addEventListener("pointermove",e=>{e.preventDefault();onMove(e);});
-cMain.addEventListener("pointerup",  e=>{e.preventDefault();onUp(e);});
+cMain.addEventListener("pointerup",e=>{
+  e.preventDefault();
+  // Détection double-tap sur mobile pour ouvrir popup pion
+  const{sx,sy}=evXY(e),wxy=s2w(sx,sy);
+  const hit=tokenAt(wxy.x,wxy.y);
+  if(hit&&!dragging){
+    if(_tapTarget===hit.id&&_tapTimer){
+      // Double tap → popup
+      clearTimeout(_tapTimer);_tapTimer=null;_tapTarget=null;
+      openTokenPopup(hit.id,sx,sy);
+    } else {
+      _tapTarget=hit.id;
+      _tapTimer=setTimeout(()=>{_tapTimer=null;_tapTarget=null;},400);
+    }
+  } else {
+    clearTimeout(_tapTimer);_tapTimer=null;_tapTarget=null;
+  }
+  onUp(e);
+});
 cMain.addEventListener("pointerleave",()=>document.getElementById("hover-info").classList.remove("show"));
 cMain.addEventListener("contextmenu",e=>{
   e.preventDefault();const{sx,sy}=evXY(e),wxy=s2w(sx,sy);
@@ -1117,19 +1140,36 @@ cMain.addEventListener("touchmove",e=>{
 cMain.addEventListener("touchend",()=>{pinchDist=null;});
 
 function onDown(e){
-  closeRangePopup();closeTokenPopup();
+  // Fermer popups sauf si on clique dedans
+  const rp=document.getElementById("range-popup"),tp=document.getElementById("token-popup"),op=document.getElementById("obs-popup");
+  if(rp.style.display==="block"&&!rp.contains(e.target))closeRangePopup();
+  if(tp.style.display==="block"&&!tp.contains(e.target))closeTokenPopup();
+  if(op.style.display==="block"&&!op.contains(e.target)){closeObsPopup();}
+
   const{sx,sy}=evXY(e),wxy=s2w(sx,sy);
+
   if(tool==="pan"){
-    // select obstacle on tap (MJ)
-    if(isMJ){const o=obsAt(wxy.x,wxy.y);if(o){openObsPopup(o.obsId,sx,sy);draggingObs={id:o.obsId,dx:wxy.x-o.x,dy:wxy.y-o.y};return;}}
+    // En pan, le MJ peut glisser les obstacles avec un appui long (géré par timer)
+    // ou cliquer pour sélectionner
+    if(isMJ){
+      const o=obsAt(wxy.x,wxy.y);
+      if(o){
+        draggingObs={id:o.obsId,dx:wxy.x-o.x,dy:wxy.y-o.y,moved:false};
+        selectedObs=o.obsId; drawAll(); return;
+      }
+    }
+    // Sinon pan normal
+    if(selectedObs){closeObsPopup();}
     panning=true;panStart={sx,sy,ox,oy};cMain.style.cursor="grabbing";return;
   }
+
   if(pendingObsType&&isMJ){
     const def=getObsDef(pendingObsType);
     const obsId="o_"+Date.now();
-    const o={obsId,obsType:pendingObsType,x:snap(wxy.x),y:snap(wxy.y),rotation:0,scale:1};
+    const o={obsId,obsType:pendingObsType,x:snap(wxy.x),y:snap(wxy.y),rotation:0,scale:1,flipX:false};
     obstacles[obsId]=o;send({type:"SET_OBSTACLE",...o});drawAll();return;
   }
+
   if(tool==="token"){
     const hit=tokenAt(wxy.x,wxy.y);
     if(hit){if(hit.userId===myId||isMJ)dragging={id:hit.id,dx:wxy.x-hit.x,dy:wxy.y-hit.y};}
@@ -1141,6 +1181,7 @@ function onDown(e){
       send({type:"SET_TOKEN",tokenId:tid,x:t.x,y:t.y,color:activeColor,label:myName,userId:myId,size:"Medium",sizeN:1});
       dragging={id:tid,dx:0,dy:0};drawAll();}
     return;}
+
   if(tool==="range"){const hit=tokenAt(wxy.x,wxy.y);if(hit)openRangePopup(hit.id,sx,sy);else toast("Clique sur un pion");return;}
   if(tool==="ruler"){rulerStart={x:wxy.x,y:wxy.y};rulerEnd={x:wxy.x,y:wxy.y};return;}
   if(tool==="draw"){
@@ -1156,8 +1197,6 @@ function onDown(e){
         const near=d.points.some(([mx,my])=>{const sp=w2s(mx,my);return Math.hypot(sp.x-sx,sp.y-sy)<16;});
         if(near){delete drawings[id];send({type:"DELETE_DRAWING",drawId:id});drawAll();return;}}}
   }
-  // Pan mode — drag obstacle
-  if(tool==="pan"&&isMJ){const o=obsAt(wxy.x,wxy.y);if(o)draggingObs={id:o.obsId,dx:wxy.x-o.x,dy:wxy.y-o.y};}
 }
 
 function onMove(e){
@@ -1167,7 +1206,15 @@ function onMove(e){
   document.getElementById("hover-info").classList.add("show");
   if(panning){ox=panStart.ox+(sx-panStart.sx);oy=panStart.oy+(sy-panStart.sy);drawAll();return;}
   if(dragging){const t=tokens[dragging.id];if(t){t.x=snap(wxy.x-dragging.dx);t.y=snap(wxy.y-dragging.dy);drawAll();}return;}
-  if(draggingObs){const o=obstacles[draggingObs.id];if(o){o.x=snap(wxy.x-draggingObs.dx);o.y=snap(wxy.y-draggingObs.dy);drawAll();}return;}
+  if(draggingObs){
+    const o=obstacles[draggingObs.id];
+    if(o){
+      const nx=snap(wxy.x-draggingObs.dx),ny=snap(wxy.y-draggingObs.dy);
+      if(nx!==o.x||ny!==o.y)draggingObs.moved=true;
+      o.x=nx;o.y=ny;drawAll();
+    }
+    return;
+  }
   if(tool==="ruler"&&rulerStart){rulerEnd={x:wxy.x,y:wxy.y};drawAll();return;}
   if(tool==="draw"&&drawingActive){
     if(drawStyle==="free"){
@@ -1189,8 +1236,20 @@ function onUp(e){
   if(dragging){const t=tokens[dragging.id];
     if(t)send({type:"SET_TOKEN",tokenId:t.id,x:t.x,y:t.y,color:t.color,label:t.label,userId:t.userId,notes:t.notes,hp:t.hp,maxHp:t.maxHp,size:t.size,sizeN:t.sizeN,conditions:t.conditions});
     dragging=null;}
-  if(draggingObs){const o=obstacles[draggingObs.id];if(o)send({type:"SET_OBSTACLE",...o});draggingObs=null;}
-  if(panning){panning=false;cMain.style.cursor="grab";}
+  if(draggingObs){
+    const o=obstacles[draggingObs.id];
+    if(o){
+      if(draggingObs.moved){
+        // Drag → envoyer nouvelle position
+        send({type:"SET_OBSTACLE",...o});
+      } else {
+        // Simple clic sans drag → ouvrir popup
+        openObsPopup(o.obsId,sx,sy);
+      }
+    }
+    draggingObs=null;
+  }
+  if(panning){panning=false;cMain.style.cursor=tool==="pan"?"grab":"crosshair";}
   if(tool==="draw"&&drawingActive){
     if(drawStyle==="free"&&drawPoints.length>1){
       send({type:"SET_DRAWING",drawId:drawingActive,drawType:"free",points:[...drawPoints],color:activeColor,width:2});
@@ -1302,31 +1361,68 @@ function applyCustomRange(){
 // INITIATIVE
 // ════════════════════════════════════════
 function togglePanel(id){document.getElementById(id).classList.toggle("open");}
+
+// Garantit que initiatives est toujours un array
+function ensureInitArray(){
+  if(!Array.isArray(initiatives)){
+    initiatives=Object.values(initiatives||{});
+  }
+}
+
 function renderInitiatives(){
+  ensureInitArray();
   const list=document.getElementById("init-list");list.innerHTML="";
-  [...initiatives].sort((a,b)=>b.value-a.value).forEach(ini=>{
+  const sorted=[...initiatives].sort((a,b)=>b.value-a.value);
+  const curToken=initiatives[currentTurn]?.tokenId;
+  sorted.forEach(ini=>{
+    const isActive=ini.tokenId===curToken;
     const row=document.createElement("div");
-    row.className="init-row"+(initiatives[currentTurn]?.tokenId===ini.tokenId?" active-turn":"");
-    row.innerHTML=`<span class="init-val">${ini.value}</span><span class="init-name">${ini.name}</span>
+    row.className="init-row"+(isActive?" active-turn":"");
+    row.innerHTML=`<span class="init-val">${ini.value}</span>
+      <span class="init-name" style="${isActive?"color:var(--gold);font-weight:700":""}">${ini.name}</span>
       ${isMJ?`<button class="init-del" onclick="removeInit('${ini.tokenId}')">✕</button>`:""}`;
-    list.appendChild(row);});
+    list.appendChild(row);
+  });
   const banner=document.getElementById("current-turn-banner");
-  if(initiatives.length>0){banner.textContent=`Tour : ${initiatives[currentTurn]?.name||"?"}`;banner.style.display="block";}
-  else banner.style.display="none";
+  if(initiatives.length>0){
+    const cur=initiatives[currentTurn]||initiatives[0];
+    banner.textContent=`⚡ Tour de : ${cur?.name||"?"}`;
+    banner.style.display="block";
+  } else banner.style.display="none";
   drawAll();
 }
+
 function addInitEntry(){
+  ensureInitArray();
   const name=document.getElementById("init-name-in").value.trim();
   const val=parseInt(document.getElementById("init-val-in").value)||0;
   if(!name)return;
   const tok=Object.values(tokens).find(t=>t.label===name);
+  // Évite les doublons
+  const existing=initiatives.findIndex(i=>i.tokenId===(tok?.id||name));
+  if(existing>=0)initiatives.splice(existing,1);
   initiatives.push({tokenId:tok?.id||("npc_"+Date.now()),name,value:val});
   initiatives.sort((a,b)=>b.value-a.value);
+  currentTurn=0;
   send({type:"SET_INITIATIVES",initiatives});renderInitiatives();
   document.getElementById("init-name-in").value="";document.getElementById("init-val-in").value="";
 }
-function removeInit(tid){initiatives=initiatives.filter(i=>i.tokenId!==tid);send({type:"SET_INITIATIVES",initiatives});renderInitiatives();}
-function nextTurn(){if(!initiatives.length)return;currentTurn=(currentTurn+1)%initiatives.length;send({type:"SET_INITIATIVES",initiatives});renderInitiatives();}
+
+function removeInit(tid){
+  ensureInitArray();
+  initiatives=initiatives.filter(i=>i.tokenId!==tid);
+  currentTurn=Math.min(currentTurn,Math.max(0,initiatives.length-1));
+  send({type:"SET_INITIATIVES",initiatives});renderInitiatives();
+}
+
+function nextTurn(){
+  ensureInitArray();
+  if(!initiatives.length)return;
+  currentTurn=(currentTurn+1)%initiatives.length;
+  // Broadcast le tour actuel aussi
+  send({type:"SET_INITIATIVES",initiatives});
+  renderInitiatives();
+}
 
 // ════════════════════════════════════════
 // DICE
@@ -1493,8 +1589,14 @@ let _tt;
 function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove("show"),2800);}
 
 document.addEventListener("pointerdown",e=>{
-  const rp=document.getElementById("range-popup");if(rp.style.display==="block"&&!rp.contains(e.target)&&e.target!==cMain)closeRangePopup();
-  const tp=document.getElementById("token-popup");if(tp.style.display==="block"&&!tp.contains(e.target)&&e.target!==cMain)closeTokenPopup();
+  // Fermer les popups si clic en dehors (hors canvas — le canvas gère lui-même)
+  if(e.target===cMain)return;
+  const rp=document.getElementById("range-popup");
+  if(rp.style.display==="block"&&!rp.contains(e.target))closeRangePopup();
+  const tp=document.getElementById("token-popup");
+  if(tp.style.display==="block"&&!tp.contains(e.target))closeTokenPopup();
+  const op=document.getElementById("obs-popup");
+  if(op.style.display==="block"&&!op.contains(e.target))closeObsPopup();
 });
 
 // ════════════════════════════════════════
