@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Battlemap</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0d0f14;
+      --surf: #161a24;
+      --surf2: #1e2230;
+      --bord: #2a2f3f;
+      --gold: #c8a96e;
+      --blue: #5c7cff;
+      --red: #e05252;
+      --green: #52c97a;
+      --purple: #c878f0;
+      --text: #ddd5c4;
+      --muted: #5a5a6a;
+      --r: 8px;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      background: var(--bg);
+      padding: 20px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ── SHARED COMPONENTS ── */
+    .logo {
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 900;
+      letter-spacing: .03em;
+      color: var(--gold);
+      text-shadow: 0 0 60px #c8a96e33;
+    }
+
+    .logo em {
+      color: var(--text);
+      font-style: normal;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 18px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .card-title {
+      font-size: .66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--gold);
+    }
+
+    input[type=text],
+    input[type=password],
+    input[type=number] {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      color: var(--text);
+      padding: 10px 13px;
+      font-size: .92rem;
+      width: 100%;
+      outline: none;
+      transition: border-color .2s;
+      -webkit-appearance: none;
+      font-family: inherit;
+    }
+
+    input:focus {
+      border-color: var(--gold);
+    }
+
+    .btn {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--r);
+      padding: 10px 14px;
+      font-size: .86rem;
+      font-weight: 700;
+      font-family: inherit;
+      transition: transform .1s, opacity .15s;
+      width: 100%;
+    }
+
+    .btn:active {
+      transform: scale(.97);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #0d0f14;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--bord);
+      color: var(--text);
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: .78rem;
+      width: auto;
+    }
+
+    .err {
+      color: var(--red);
+      font-size: .76rem;
+      min-height: 14px;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--gold);
+      cursor: pointer;
+      font-size: .8rem;
+      font-family: inherit;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    /* ── AUTH SCREEN ── */
+    #auth-tabs {
+      display: flex;
+      gap: 0;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 9px;
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+
+    .auth-tab:first-child {
+      border-radius: var(--r) 0 0 var(--r);
+    }
+
+    .auth-tab:last-child {
+      border-radius: 0 var(--r) var(--r) 0;
+      border-left: none;
+    }
+
+    .auth-tab.on {
+      background: #c8a96e22;
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    #auth-join-section {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* ── DASHBOARD ── */
+    #dashboard {
+      overflow-y: auto;
+    }
+
+    #dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 4px;
+    }
+
+    #dash-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    #dash-username {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .campaign-list {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .camp-card {
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+
+    .camp-card:hover {
+      border-color: var(--gold);
+    }
+
+    .camp-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .camp-info {
+      flex: 1;
+    }
+
+    .camp-name {
+      font-size: .9rem;
+      font-weight: 600;
+    }
+
+    .camp-meta {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .camp-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .camp-btn {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--muted);
+      padding: 5px 9px;
+      font-size: .7rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .camp-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .camp-btn.red:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .new-camp {
+      background: var(--surf2);
+      border: 1px dashed var(--bord);
+      border-radius: var(--r);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: .85rem;
+      width: 100%;
+      max-width: 600px;
+      transition: border-color .15s;
+      font-family: inherit;
+    }
+
+    .new-camp:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .camp-join-section {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── SPINNER ── */
+    #connecting {
+      position: fixed;
+      inset: 0;
+      background: #0d0f14ee;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 30;
+    }
+
+    .spin {
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--bord);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: sp .7s linear infinite;
+    }
+
+    @keyframes sp {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* ── GAME ── */
+    #game {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+    }
+
+    #topbar {
+      background: var(--surf);
+      border-bottom: 1px solid var(--bord);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    #topbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .logo-sm {
+      font-weight: 900;
+      color: var(--gold);
+      font-size: .9rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .sep {
+      color: var(--bord);
+      flex-shrink: 0;
+      padding: 0 2px;
+    }
+
+    #code-badge {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 4px;
+      padding: 3px 9px;
+      font-size: .72rem;
+      font-family: monospace;
+      color: var(--gold);
+      letter-spacing: .12em;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tbtn {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      color: var(--muted);
+      border-radius: var(--r);
+      padding: 5px 9px;
+      font-size: .7rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+      font-family: inherit;
+      flex-shrink: 0;
+      line-height: 1.2;
+    }
+
+    .tbtn.on {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: #c8a96e11;
+    }
+
+    .tbtn:active {
+      transform: scale(.95);
+    }
+
+    .tbtn.danger {
+      color: var(--red);
+    }
+
+    .zoom-grp {
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .zoom-grp .tbtn {
+      border-radius: 0;
+      border-right-width: 0;
+    }
+
+    .zoom-grp .tbtn:first-child {
+      border-radius: var(--r) 0 0 var(--r);
+    }
+
+    .zoom-grp .tbtn:last-child {
+      border-radius: 0 var(--r) var(--r) 0;
+      border-right-width: 1px;
+    }
+
+    #zoom-lbl {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-right-width: 0;
+      color: var(--muted);
+      padding: 5px 7px;
+      font-size: .68rem;
+      white-space: nowrap;
+      font-family: monospace;
+    }
+
+    #mj-controls {
+      display: none;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Canvas */
+    #wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #09090e;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #c-grid {
+      pointer-events: none;
+    }
+
+    #hover-info {
+      position: absolute;
+      bottom: 58px;
+      left: 10px;
+      background: #161a24cc;
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: .7rem;
+      color: var(--muted);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    #hover-info.show {
+      opacity: 1;
+    }
+
+    #minimap {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 130px;
+      height: 84px;
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: #09090e;
+    }
+
+    #minimap canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mm-vp {
+      position: absolute;
+      border: 1px solid var(--gold);
+      border-radius: 2px;
+      pointer-events: none;
+      opacity: .7;
+    }
+
+    #btn-reset {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      background: #161a24cc;
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      color: var(--muted);
+      font-size: .72rem;
+      padding: 4px 9px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #colors {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      background: #161a24dd;
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--bord);
+      border-radius: 40px;
+      padding: 6px 12px;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+
+    .swatch.on {
+      border-color: #fff;
+      transform: scale(1.3);
+    }
+
+    #players-panel {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #161a24cc;
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 9px 11px;
+      font-size: .7rem;
+      min-width: 105px;
+    }
+
+    #players-panel h3 {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .6rem;
+      margin-bottom: 5px;
+    }
+
+    .prow {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+
+    .pdot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #dist-label {
+      position: absolute;
+      background: #0d0f14cc;
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: .72rem;
+      color: var(--gold);
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+    }
+
+    #current-turn-banner {
+      display: none;
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #c8a96e;
+      color: #0d0f14;
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: .78rem;
+      font-weight: 700;
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    /* Side panels */
+    .side-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 280px;
+      height: 100%;
+      background: var(--surf);
+      border-left: 1px solid var(--bord);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .25s;
+      z-index: 10;
+    }
+
+    .side-panel.open {
+      transform: translateX(0);
+    }
+
+    .sp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--bord);
+      flex-shrink: 0;
+    }
+
+    .sp-header h2 {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gold);
+    }
+
+    .sp-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0;
+    }
+
+    .sp-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      scrollbar-width: thin;
+    }
+
+    /* Initiative */
+    .init-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: var(--bg);
+    }
+
+    .init-row.active-turn {
+      border-color: var(--gold);
+      background: #c8a96e0a;
+    }
+
+    .init-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--gold);
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .init-name {
+      flex: 1;
+      font-size: .8rem;
+    }
+
+    .init-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .85rem;
+      padding: 0;
+    }
+
+    .init-add {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .init-add input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 9px;
+      font-size: .8rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .init-add input:focus {
+      border-color: var(--gold);
+    }
+
+    .init-add button {
+      background: var(--gold);
+      color: #0d0f14;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .8rem;
+    }
+
+    #init-next {
+      width: 100%;
+      margin-top: 10px;
+      background: var(--surf2);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 8px;
+      font-size: .8rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #init-next:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Obstacle bank */
+    #obs-panel .sp-body {
+      padding: 10px;
+    }
+
+    .obs-cat-title {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--gold);
+      margin: 10px 0 6px;
+    }
+
+    .obs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .obs-item {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      padding: 6px 4px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all .15s;
+    }
+
+    .obs-item:hover,
+    .obs-item.sel {
+      border-color: var(--gold);
+      background: #c8a96e11;
+    }
+
+    .obs-item svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .obs-item span {
+      font-size: .58rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .obs-sep {
+      border: none;
+      border-top: 1px solid var(--bord);
+      margin: 8px 0;
+    }
+
+    #obs-clear {
+      width: 100%;
+      margin-top: 6px;
+      background: transparent;
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--red);
+      padding: 7px;
+      font-size: .78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* Token popup */
+    #token-popup {
+      position: absolute;
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 14px;
+      display: none;
+      z-index: 50;
+      width: 260px;
+      box-shadow: 0 8px 32px #00000088;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    #token-popup h4 {
+      color: var(--gold);
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+      padding-right: 20px;
+    }
+
+    .tp-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .tp-row {
+      display: flex;
+      gap: 7px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .tp-row label {
+      font-size: .7rem;
+      color: var(--muted);
+      width: 56px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .tp-row input,
+    .tp-row textarea,
+    .tp-row select {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 8px;
+      font-size: .8rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .tp-row textarea {
+      resize: none;
+      height: 48px;
+    }
+
+    .tp-row select {
+      cursor: pointer;
+    }
+
+    .tp-row input:focus,
+    .tp-row textarea:focus,
+    .tp-row select:focus {
+      border-color: var(--gold);
+    }
+
+    .hp-pair {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+    }
+
+    .hp-pair input {
+      width: 44px;
+      text-align: center;
+    }
+
+    .hp-sep {
+      color: var(--muted);
+    }
+
+    .tp-section {
+      font-size: .66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gold);
+      margin: 10px 0 6px;
+    }
+
+    /* Conditions grid */
+    .cond-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .cond-btn {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 20px;
+      padding: 3px 8px;
+      font-size: .68rem;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: inherit;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cond-btn.on {
+      border-color: currentColor;
+      color: var(--text);
+    }
+
+    .cond-btn[data-color="red"].on {
+      color: var(--red);
+      border-color: var(--red);
+      background: #e0525218;
+    }
+
+    .cond-btn[data-color="blue"].on {
+      color: var(--blue);
+      border-color: var(--blue);
+      background: #5c7cff18;
+    }
+
+    .cond-btn[data-color="purple"].on {
+      color: var(--purple);
+      border-color: var(--purple);
+      background: #c878f018;
+    }
+
+    .cond-btn[data-color="gold"].on {
+      color: var(--gold);
+      border-color: var(--gold);
+      background: #c8a96e18;
+    }
+
+    .cond-btn[data-color="green"].on {
+      color: var(--green);
+      border-color: var(--green);
+      background: #52c97a18;
+    }
+
+    .cond-btn[data-color="muted"].on {
+      color: #aaa;
+      border-color: #aaa;
+      background: #aaaaaa18;
+    }
+
+    #tp-save {
+      width: 100%;
+      background: var(--gold);
+      color: #0d0f14;
+      border: none;
+      border-radius: 6px;
+      padding: 7px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .82rem;
+      margin-top: 4px;
+    }
+
+    /* Range popup */
+    #range-popup {
+      position: absolute;
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 14px;
+      display: none;
+      z-index: 50;
+      min-width: 210px;
+      box-shadow: 0 8px 32px #00000088;
+    }
+
+    #range-popup h4 {
+      color: var(--gold);
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 9px;
+    }
+
+    .range-colors {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+
+    .range-colors span {
+      font-size: .63rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      white-space: nowrap;
+    }
+
+    .rc-sw {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+
+    .rc-sw.on {
+      border-color: #fff;
+      transform: scale(1.25);
+    }
+
+    .rp-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 9px;
+    }
+
+    .rp-btn {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: .72rem;
+      padding: 4px 9px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .rp-btn:active {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .rp-custom {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .rp-custom input {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 9px;
+      font-size: .82rem;
+      width: 68px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .rp-custom button {
+      background: var(--gold);
+      color: #0d0f14;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .78rem;
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+    }
+
+    /* Dice */
+    #dice-panel {
+      position: absolute;
+      bottom: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #161a24ee;
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--bord);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: none;
+      z-index: 40;
+    }
+
+    .dice-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 7px;
+      flex-wrap: wrap;
+    }
+
+    .d-btn {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: .72rem;
+      padding: 5px 9px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+
+    .d-btn:active {
+      border-color: var(--gold);
+      color: var(--gold);
+      transform: scale(.95);
+    }
+
+    .dice-custom {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .dice-custom input {
+      background: var(--bg);
+      border: 1px solid var(--bord);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 4px 8px;
+      font-size: .78rem;
+      width: 44px;
+      text-align: center;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .dice-custom button {
+      background: var(--gold);
+      color: #0d0f14;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: .75rem;
+    }
+
+    #dice-log {
+      max-height: 80px;
+      overflow-y: auto;
+      margin-top: 7px;
+      border-top: 1px solid var(--bord);
+      padding-top: 6px;
+      scrollbar-width: thin;
+    }
+
+    .dice-entry {
+      font-size: .72rem;
+      margin-bottom: 3px;
+    }
+
+    .dice-entry .dval {
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .dice-entry .dname {
+      color: var(--muted);
+    }
+
+    /* Condition badges on map */
+    .cond-badge {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surf);
+      border: 1px solid var(--bord);
+      border-radius: var(--r);
+      padding: 6px 15px;
+      font-size: .76rem;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      z-index: 200;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- AUTH SCREEN -->
+  <div class="screen active" id="auth-screen">
+    <div class="logo">Battle<em>map</em></div>
+    <p class="sub">JDR collaboratif · sauvegarde par compte</p>
+
+    <div id="auth-tabs">
+      <button class="auth-tab on" onclick="showAuthTab('login')">Connexion</button>
+      <button class="auth-tab" onclick="showAuthTab('register')">Créer un compte</button>
+    </div>
+
+    <div class="card" id="auth-form">
+      <div class="card-title" id="auth-form-title">Connexion</div>
+      <input type="text" id="auth-username" placeholder="Pseudo" maxlength="30" autocomplete="username" />
+      <input type="password" id="auth-password" placeholder="Mot de passe" autocomplete="current-password" />
+      <div class="err" id="auth-err"></div>
+      <button class="btn btn-gold" id="auth-submit" onclick="submitAuth()">Se connecter</button>
+    </div>
+
+    <div id="auth-join-section">
+      <div style="text-align:center;color:var(--muted);font-size:.8rem;">— ou rejoindre sans compte —</div>
+      <input type="text" id="guest-name" placeholder="Ton nom" maxlength="20" />
+      <input type="text" id="guest-code" placeholder="Code de lobby (ex: ALOA7T)" maxlength="8"
+        style="text-transform:uppercase;letter-spacing:.1em;" />
+      <button class="btn btn-outline" onclick="joinAsGuest()">→ Rejoindre comme invité</button>
+      <div class="err" id="guest-err"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen" id="dashboard">
+    <div id="dash-header">
+      <div>
+        <div class="logo" style="font-size:1.6rem">⚔ Battlemap</div>
+        <div id="dash-username"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <div class="campaign-list" id="campaign-list"></div>
+
+    <button class="new-camp" onclick="createCampaign()">
+      <span style="font-size:1.4rem">＋</span>
+      <span>Nouvelle campagne</span>
+    </button>
+
+    <div class="camp-join-section">
+      <div class="card-title">Rejoindre une partie</div>
+      <input type="text" id="dash-join-name" placeholder="Ton nom pour cette session" maxlength="20" />
+      <input type="text" id="dash-join-code" placeholder="Code de lobby" maxlength="8"
+        style="text-transform:uppercase" />
+      <button class="btn btn-outline" onclick="joinFromDash()">→ Rejoindre</button>
+      <div class="err" id="dash-join-err"></div>
+    </div>
+  </div>
+
+  <!-- CONNECTING -->
+  <div id="connecting">
+    <div class="spin"></div><span style="color:var(--muted);font-size:.82rem">Connexion…</span>
+  </div>
+
+  <!-- GAME -->
+  <div id="game">
+    <div id="topbar">
+      <span class="logo-sm">⚔</span>
+      <span id="code-badge" onclick="copyLink()">——</span>
+      <span class="sep">|</span>
+      <button class="tbtn on" id="tb-pan" onclick="setTool('pan')">✋</button>
+      <button class="tbtn" id="tb-token" onclick="setTool('token')">🔵 Pion</button>
+      <button class="tbtn" id="tb-range" onclick="setTool('range')">⭕ Portée</button>
+      <button class="tbtn" id="tb-ruler" onclick="setTool('ruler')">📏 Mesure</button>
+      <button class="tbtn" id="tb-draw" onclick="setTool('draw')">✏️ Dessin</button>
+      <button class="tbtn" id="tb-ping" onclick="setTool('ping')">📍 Ping</button>
+      <button class="tbtn" id="tb-delete" onclick="setTool('delete')">🗑</button>
+      <span class="sep">|</span>
+      <div class="zoom-grp">
+        <button class="tbtn" onclick="zoomBy(1.2)">＋</button>
+        <span id="zoom-lbl">100%</span>
+        <button class="tbtn" onclick="zoomBy(0.83)">－</button>
+      </div>
+      <button class="tbtn on" id="tb-grid" onclick="toggleGrid()">⊞</button>
+      <span id="draw-opts" style="display:none;gap:4px;">
+        <button class="tbtn on" id="ds-free" onclick="setDrawStyle('free')">🖊</button>
+        <button class="tbtn" id="ds-line" onclick="setDrawStyle('line')">╱</button>
+        <button class="tbtn" id="ds-rect" onclick="setDrawStyle('rect')">▭</button>
+        <button class="tbtn" id="ds-arrow" onclick="setDrawStyle('arrow')">→</button>
+      </span>
+      <span class="sep">|</span>
+      <button class="tbtn" onclick="toggleDice()">🎲</button>
+      <button class="tbtn" onclick="togglePanel('init-panel')">⚡ Init</button>
+      <div id="mj-controls">
+        <span class="sep">|</span>
+        <button class="tbtn" onclick="togglePanel('obs-panel')">🧱</button>
+        <button class="tbtn" onclick="changeImage()">🖼</button>
+        <button class="tbtn danger" onclick="clearAll()">✕</button>
+      </div>
+      <span class="sep">|</span>
+      <button class="tbtn" onclick="backToDash()" style="color:var(--muted)">🏠</button>
+    </div>
+
+    <div id="wrap">
+      <canvas id="c-grid"></canvas>
+      <canvas id="c-main"></canvas>
+      <div id="hover-info"></div>
+      <div id="current-turn-banner"></div>
+      <div id="players-panel">
+        <h3>Joueurs</h3>
+        <div id="plist"></div>
+      </div>
+      <button id="btn-reset" onclick="resetView()">⌖ Vue</button>
+      <div id="minimap"><canvas id="c-mini"></canvas>
+        <div id="mm-vp"></div>
+      </div>
+      <div id="colors"></div>
+      <div id="dist-label"></div>
+    </div>
+  </div>
+
+  <!-- INITIATIVE PANEL -->
+  <div class="side-panel" id="init-panel">
+    <div class="sp-header">
+      <h2>⚡ Initiative</h2><button class="sp-close" onclick="togglePanel('init-panel')">✕</button>
+    </div>
+    <div class="sp-body">
+      <div id="init-list"></div>
+      <div class="init-add" id="mj-init-add" style="display:none">
+        <input type="text" id="init-name-in" placeholder="Nom" />
+        <input type="number" id="init-val-in" placeholder="Init" style="width:58px" />
+        <button onclick="addInitEntry()">＋</button>
+      </div>
+      <button id="init-next" style="display:none" onclick="nextTurn()">▶ Tour suivant</button>
+    </div>
+  </div>
+
+  <!-- OBSTACLE PANEL -->
+  <div class="side-panel" id="obs-panel">
+    <div class="sp-header">
+      <h2>🧱 Obstacles</h2><button class="sp-close" onclick="togglePanel('obs-panel')">✕</button>
+    </div>
+    <div class="sp-body" id="obs-bank"></div>
+  </div>
+
+  <!-- TOKEN POPUP -->
+  <div id="token-popup">
+    <button class="tp-close" onclick="closeTokenPopup()">✕</button>
+    <h4 id="tp-title">Pion</h4>
+    <div class="tp-row"><label>Nom</label><input type="text" id="tp-label" maxlength="20" /></div>
+    <div class="tp-row"><label>PV</label>
+      <div class="hp-pair">
+        <input type="number" id="tp-hp" placeholder="—" />
+        <span class="hp-sep">/</span>
+        <input type="number" id="tp-maxhp" placeholder="—" />
+      </div>
+    </div>
+    <div class="tp-row"><label>Taille</label>
+      <select id="tp-size">
+        <option value="Tiny">Tiny (0.5×0.5)</option>
+        <option value="Small">Small (1×1)</option>
+        <option value="Medium" selected>Medium (1×1)</option>
+        <option value="Large">Large (2×2)</option>
+        <option value="Huge">Huge (3×3)</option>
+        <option value="Gargantuan">Gargantuan (4×4)</option>
+        <option value="Custom">Personnalisé…</option>
+      </select>
+    </div>
+    <div class="tp-row" id="tp-sizen-row" style="display:none">
+      <label>Cases</label>
+      <input type="number" id="tp-sizen" min="1" max="10" value="1" style="width:60px" />
+    </div>
+    <div class="tp-section">Conditions D&D</div>
+    <div class="cond-grid" id="cond-grid"></div>
+    <div class="tp-row"><label>Notes</label><textarea id="tp-notes" placeholder="Équipement, sorts…"></textarea></div>
+    <button id="tp-save" onclick="saveTokenPopup()">Enregistrer</button>
+  </div>
+
+  <!-- RANGE POPUP -->
+  <div id="range-popup">
+    <button class="popup-close" onclick="closeRangePopup()">✕</button>
+    <h4 id="rp-title">Portée</h4>
+    <div class="range-colors"><span>Couleur</span>
+      <div id="rp-colors"></div>
+    </div>
+    <div class="rp-presets" id="rp-presets"></div>
+    <div class="rp-custom">
+      <input type="number" id="rp-input" placeholder="m" min="1" max="500" />
+      <button onclick="applyCustomRange()">OK</button>
+    </div>
+  </div>
+
+  <!-- DICE -->
+  <div id="dice-panel">
+    <div class="dice-row">
+      <button class="d-btn" onclick="rollDice(4)">d4</button>
+      <button class="d-btn" onclick="rollDice(6)">d6</button>
+      <button class="d-btn" onclick="rollDice(8)">d8</button>
+      <button class="d-btn" onclick="rollDice(10)">d10</button>
+      <button class="d-btn" onclick="rollDice(12)">d12</button>
+      <button class="d-btn" onclick="rollDice(20)">d20</button>
+      <button class="d-btn" onclick="rollDice(100)">d100</button>
+    </div>
+    <div class="dice-custom">
+      <input type="number" id="dice-count" value="2" min="1" max="20" />
+      <span style="color:var(--muted);font-size:.75rem">×</span>
+      <input type="number" id="dice-sides" value="6" min="2" max="1000" />
+      <button onclick="rollCustomDice()">Lancer</button>
+    </div>
+    <div id="dice-log"></div>
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    // ════════════════════════════════════════
+    // D&D DATA
+    // ════════════════════════════════════════
+    const DND_SIZES = {
+      "Tiny": { n: 0.5, label: "Tiny (0.5×0.5)" },
+      "Small": { n: 1, label: "Small (1×1)" },
+      "Medium": { n: 1, label: "Medium (1×1)" },
+      "Large": { n: 2, label: "Large (2×2)" },
+      "Huge": { n: 3, label: "Huge (3×3)" },
+      "Gargantuan": { n: 4, label: "Gargantuan (4×4)" },
+      "Custom": { n: null, label: "Personnalisé" },
+    };
+
+    const DND_CONDITIONS = [
+      { id: "blinded", label: "Aveuglé", icon: "👁", color: "muted" },
+      { id: "charmed", label: "Charmé", icon: "💜", color: "purple" },
+      { id: "deafened", label: "Assourdi", icon: "👂", color: "muted" },
+      { id: "exhaustion", label: "Épuisé", icon: "😴", color: "blue" },
+      { id: "frightened", label: "Effrayé", icon: "😱", color: "purple" },
+      { id: "grappled", label: "Agrippé", icon: "🤝", color: "gold" },
+      { id: "incapacitated", label: "Incapacité", icon: "💫", color: "blue" },
+      { id: "invisible", label: "Invisible", icon: "👻", color: "muted" },
+      { id: "paralyzed", label: "Paralysé", icon: "⚡", color: "blue" },
+      { id: "petrified", label: "Pétrifié", icon: "🗿", color: "muted" },
+      { id: "poisoned", label: "Empoisonné", icon: "☠️", color: "green" },
+      { id: "prone", label: "À terre", icon: "⬇️", color: "gold" },
+      { id: "restrained", label: "Entravé", icon: "⛓", color: "red" },
+      { id: "stunned", label: "Étourdi", icon: "💥", color: "red" },
+      { id: "unconscious", label: "Inconscient", icon: "💤", color: "muted" },
+      { id: "concentrating", label: "Concentré", icon: "🔮", color: "blue" },
+      { id: "dead", label: "Mort", icon: "💀", color: "red" },
+    ];
+
+    // ════════════════════════════════════════
+    // OBSTACLE BANK
+    // ════════════════════════════════════════
+    const OBS_BANK = [
+      {
+        cat: "Murs & portes", items: [
+          { type: "wall-h", label: "Mur H", w: 2, h: .2, svg: `<rect x="2" y="14" width="28" height="4" rx="1" fill="#8a7560"/>` },
+          { type: "wall-v", label: "Mur V", w: .2, h: 2, svg: `<rect x="14" y="2" width="4" height="28" rx="1" fill="#8a7560"/>` },
+          { type: "wall-d", label: "Diag", w: 1.5, h: 1.5, svg: `<line x1="4" y1="28" x2="28" y2="4" stroke="#8a7560" stroke-width="4" stroke-linecap="round"/>` },
+          {
+            type: "door", label: "Porte", w: .25, h: 1, svg: `<rect x="10" y="2" width="3" height="28" rx="1" fill="#8a7560"/>
+      <path d="M13 8 Q26 8 26 16 Q26 24 13 24" fill="none" stroke="#c8a96e" stroke-width="2"/>
+      <circle cx="24" cy="16" r="2" fill="#c8a96e"/>` },
+          {
+            type: "arch", label: "Arche", w: .3, h: 1, svg: `<rect x="8" y="2" width="4" height="12" rx="1" fill="#8a7560"/>
+      <rect x="20" y="2" width="4" height="12" rx="1" fill="#8a7560"/>
+      <path d="M8 14 Q16 2 24 14" fill="none" stroke="#8a7560" stroke-width="3"/>` },
+        ]
+      },
+      {
+        cat: "Nature", items: [
+          { type: "rock-lg", label: "Gros roc", w: 2, h: 2, svg: `<ellipse cx="16" cy="18" rx="13" ry="11" fill="#5a5560"/><ellipse cx="13" cy="15" rx="7" ry="6" fill="#6e6a72"/>` },
+          { type: "rock-sm", label: "Rocher", w: 1, h: 1, svg: `<ellipse cx="16" cy="19" rx="9" ry="7" fill="#5a5560"/><ellipse cx="13" cy="17" rx="4" ry="3" fill="#6e6a72"/>` },
+          { type: "tree-1", label: "Arbre", w: 1, h: 1, svg: `<ellipse cx="16" cy="14" rx="11" ry="11" fill="#2d5a27"/><rect x="14" y="22" width="4" height="8" rx="1" fill="#6b3a2a"/>` },
+          { type: "tree-2", label: "Conifère", w: 1, h: 1, svg: `<polygon points="16,2 28,26 4,26" fill="#2d5a27"/><polygon points="16,8 26,28 6,28" fill="#234a1f"/><rect x="14" y="26" width="4" height="5" rx="1" fill="#6b3a2a"/>` },
+          { type: "bush", label: "Buisson", w: 1, h: 1, svg: `<ellipse cx="10" cy="20" rx="8" ry="7" fill="#3a6e30"/><ellipse cx="22" cy="20" rx="8" ry="7" fill="#2d5a27"/><ellipse cx="16" cy="14" rx="8" ry="8" fill="#3a6e30"/>` },
+          {
+            type: "water", label: "Eau", w: 2, h: 2, svg: `<rect x="2" y="2" width="28" height="28" rx="4" fill="#1a4a7a" opacity=".85"/>
+      <path d="M4 14 Q10 10 16 14 Q22 18 28 14" fill="none" stroke="#4ab0e0" stroke-width="1.5" opacity=".7"/>
+      <path d="M4 20 Q10 16 16 20 Q22 24 28 20" fill="none" stroke="#4ab0e0" stroke-width="1.5" opacity=".7"/>` },
+        ]
+      },
+      {
+        cat: "Mobilier", items: [
+          { type: "table", label: "Table", w: 2, h: 1, svg: `<rect x="4" y="10" width="24" height="12" rx="2" fill="#7a5a3a"/><rect x="6" y="22" width="3" height="7" rx="1" fill="#6b3a2a"/><rect x="23" y="22" width="3" height="7" rx="1" fill="#6b3a2a"/>` },
+          {
+            type: "barrel", label: "Tonneau", w: 1, h: 1, svg: `<ellipse cx="16" cy="16" rx="10" ry="13" fill="#8a5a2a"/>
+      <line x1="6" y1="11" x2="26" y2="11" stroke="#5a3a1a" stroke-width="2"/>
+      <line x1="6" y1="21" x2="26" y2="21" stroke="#5a3a1a" stroke-width="2"/>` },
+          {
+            type: "chest", label: "Coffre", w: 1, h: 1, svg: `<rect x="4" y="14" width="24" height="14" rx="2" fill="#7a5a3a"/>
+      <rect x="4" y="10" width="24" height="7" rx="2" fill="#8a6a4a"/>
+      <rect x="13" y="17" width="6" height="5" rx="1" fill="#c8a96e"/>` },
+          {
+            type: "pillar", label: "Pilier", w: 1, h: 1, svg: `<ellipse cx="16" cy="27" rx="9" ry="3" fill="#6a6060"/>
+      <rect x="9" y="6" width="14" height="22" fill="#7a7070"/>
+      <ellipse cx="16" cy="6" rx="9" ry="3" fill="#8a8080"/>` },
+          {
+            type: "fire", label: "Feu", w: 1, h: 1, svg: `<path d="M12 24 Q10 16 16 10 Q22 16 20 24" fill="#e05252"/>
+      <path d="M13 24 Q12 18 16 13 Q20 18 19 24" fill="#f4c430"/>` },
+          {
+            type: "trap", label: "Piège", w: 1, h: 1, svg: `<circle cx="16" cy="16" r="12" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="4,2"/>
+      <line x1="10" y1="10" x2="22" y2="22" stroke="#e05252" stroke-width="2"/>
+      <line x1="22" y1="10" x2="10" y2="22" stroke="#e05252" stroke-width="2"/>` },
+        ]
+      },
+      {
+        cat: "Zones", items: [
+          { type: "zone-fire", label: "Feu", w: 3, h: 3, svg: `<ellipse cx="16" cy="22" rx="13" ry="8" fill="#e0521244"/><path d="M6 22 Q8 12 16 6 Q24 12 26 22" fill="#f4c43044"/>` },
+          {
+            type: "zone-ice", label: "Glace", w: 3, h: 3, svg: `<ellipse cx="16" cy="16" rx="13" ry="13" fill="#4ab0e022"/>
+      <line x1="16" y1="3" x2="16" y2="29" stroke="#4ab0e0" stroke-width="1.5" opacity=".6"/>
+      <line x1="3" y1="16" x2="29" y2="16" stroke="#4ab0e0" stroke-width="1.5" opacity=".6"/>` },
+          {
+            type: "zone-dark", label: "Ténèbres", w: 3, h: 3, svg: `<ellipse cx="16" cy="16" rx="13" ry="13" fill="#0d0f1488"/>
+      <ellipse cx="16" cy="16" rx="13" ry="13" fill="none" stroke="#c878f0" stroke-width="1.5" opacity=".5"/>` },
+          {
+            type: "zone-holy", label: "Sacré", w: 3, h: 3, svg: `<ellipse cx="16" cy="16" rx="13" ry="13" fill="#f4c43011"/>
+      <ellipse cx="16" cy="16" rx="13" ry="13" fill="none" stroke="#f4c430" stroke-width="1.5" opacity=".6"/>` },
+        ]
+      },
+    ];
+
+    // ════════════════════════════════════════
+    // CONFIG
+    // ════════════════════════════════════════
+    const CELL = 50;
+    const COLORS = ["#5c7cff", "#e05252", "#52c97a", "#f4c430", "#c878f0", "#ff8c42", "#ffffff", "#c8a96e"];
+    const RANGE_COLS = ["#5c7cff", "#e05252", "#52c97a", "#f4c430", "#c878f0", "#ff8c42", "#ffffff"];
+    const TR = 18;
+    const RANGE_PRESETS = [{ l: "1m", m: 1 }, { l: "3m", m: 3 }, { l: "5m", m: 5 }, { l: "10m", m: 10 }, { l: "15m", m: 15 }, { l: "30m", m: 30 }];
+
+    // ════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════
+    let authToken = localStorage.getItem("bm_token") || null;
+    let authUser = null;
+    let ws = null, myId = localStorage.getItem("bm_uid") || null, myName = "", lobbyCode = null, isMJ = false;
+    let tool = "pan", drawStyle = "free", activeColor = COLORS[0], rangeColor = RANGE_COLS[0];
+    let tokens = {}, drawings = {}, obstacles = {}, showGrid = true, bgImg = null, bgUrl = "";
+    let playerIds = [], playerNames = {}, hostId = null;
+    let initiatives = [], currentTurn = 0;
+    let scale = 1, ox = 0, oy = 0;
+    let dragging = null, draggingObs = null, panning = false, panStart = null, pinchDist = null;
+    let hoverCell = { x: 0, y: 0 };
+    let rangeTarget = null, tokenPopupTarget = null;
+    let rulerStart = null, rulerEnd = null;
+    let drawingActive = null, drawPoints = [], drawShapeStart = null;
+    let pings = [], diceLog = [];
+    let pendingObsType = null;
+
+    const cGrid = document.getElementById("c-grid"), gCtx = cGrid.getContext("2d");
+    const cMain = document.getElementById("c-main"), mCtx = cMain.getContext("2d");
+    const cMini = document.getElementById("c-mini"), miniCtx = cMini.getContext("2d");
+
+    // ════════════════════════════════════════
+    // AUTH
+    // ════════════════════════════════════════
+    let authMode = "login";
+    function showAuthTab(mode) {
+      authMode = mode;
+      document.querySelectorAll(".auth-tab").forEach((t, i) => t.classList.toggle("on", (i === 0 && mode === "login") || (i === 1 && mode === "register")));
+      document.getElementById("auth-form-title").textContent = mode === "login" ? "Connexion" : "Créer un compte";
+      document.getElementById("auth-submit").textContent = mode === "login" ? "Se connecter" : "S'inscrire";
+      document.getElementById("auth-err").textContent = "";
+    }
+
+    async function submitAuth() {
+      const username = document.getElementById("auth-username").value.trim();
+      const password = document.getElementById("auth-password").value;
+      if (!username || !password) { document.getElementById("auth-err").textContent = "Champs requis."; return; }
+      const res = await fetch(`/api/${authMode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+      const data = await res.json();
+      if (!res.ok) { document.getElementById("auth-err").textContent = data.error || "Erreur"; return; }
+      authToken = data.token; authUser = { username: data.username, userId: data.userId };
+      localStorage.setItem("bm_token", authToken);
+      showDashboard();
+    }
+
+    async function logout() {
+      if (authToken) await fetch("/api/logout", { method: "POST", headers: { Authorization: `Bearer ${authToken}` } });
+      authToken = null; authUser = null; localStorage.removeItem("bm_token");
+      showScreen("auth-screen");
+    }
+
+    async function checkAuth() {
+      if (!authToken) return false;
+      const res = await fetch("/api/me", { headers: { Authorization: `Bearer ${authToken}` } });
+      if (!res.ok) { authToken = null; localStorage.removeItem("bm_token"); return false; }
+      authUser = await res.json(); return true;
+    }
+
+    // ════════════════════════════════════════
+    // DASHBOARD
+    // ════════════════════════════════════════
+    async function showDashboard() {
+      showScreen("dashboard");
+      document.getElementById("dash-username").textContent = `Connecté : ${authUser.username}`;
+      await loadCampaigns();
+    }
+
+    async function loadCampaigns() {
+      const res = await fetch("/api/campaigns", { headers: { Authorization: `Bearer ${authToken}` } });
+      const campaigns = await res.json();
+      const list = document.getElementById("campaign-list");
+      list.innerHTML = "";
+      if (!campaigns.length) {
+        list.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:12px">Aucune campagne — créez-en une !</div>`; return;
+      }
+      campaigns.forEach(c => {
+        const card = document.createElement("div"); card.className = "camp-card";
+        const date = new Date(c.updated_at * 1000).toLocaleDateString("fr");
+        card.innerHTML = `<span class="camp-icon">🗺</span>
+      <div class="camp-info">
+        <div class="camp-name">${c.name}</div>
+        <div class="camp-meta">Code : <b style="color:var(--gold);font-family:monospace">${c.lobby_code}</b> · ${date}</div>
+      </div>
+      <div class="camp-actions">
+        <button class="camp-btn" onclick="openCampaign('${c.lobby_code}');event.stopPropagation()">▶ Ouvrir</button>
+        <button class="camp-btn" onclick="renameCampaign(${c.id},'${c.name}');event.stopPropagation()">✏️</button>
+        <button class="camp-btn red" onclick="deleteCampaign(${c.id});event.stopPropagation()">🗑</button>
+      </div>`;
+        card.onclick = () => openCampaign(c.lobby_code);
+        list.appendChild(card);
+      });
+    }
+
+    async function createCampaign() {
+      const name = prompt("Nom de la campagne :"); if (!name) return;
+      const res = await fetch("/api/campaigns", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` }, body: JSON.stringify({ name }) });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || "Erreur"); return; }
+      await loadCampaigns();
+      openCampaign(data.lobby_code);
+    }
+
+    async function renameCampaign(id, current) {
+      const name = prompt("Nouveau nom :", current); if (!name || name === current) return;
+      await fetch(`/api/campaigns/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` }, body: JSON.stringify({ name }) });
+      loadCampaigns();
+    }
+
+    async function deleteCampaign(id) {
+      if (!confirm("Supprimer cette campagne ? (irréversible)")) return;
+      await fetch(`/api/campaigns/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${authToken}` } });
+      loadCampaigns();
+    }
+
+    function openCampaign(code) {
+      myName = authUser.username; isMJ = true;
+      startConnecting();
+      connectWS(() => send({ type: "JOIN_CAMPAIGN", token: authToken, lobbyCode: code }));
+    }
+
+    function joinFromDash() {
+      const code = document.getElementById("dash-join-code").value.trim().toUpperCase();
+      const name = document.getElementById("dash-join-name").value.trim() || authUser?.username || "Joueur";
+      if (!code) { document.getElementById("dash-join-err").textContent = "Entre un code."; return; }
+      myName = name; isMJ = false;
+      if (!myId) myId = Math.random().toString(36).slice(2, 10); localStorage.setItem("bm_uid", myId);
+      startConnecting();
+      connectWS(() => send({ type: "JOIN_LOBBY", code, userId: myId, name }));
+    }
+
+    function joinAsGuest() {
+      const code = document.getElementById("guest-code").value.trim().toUpperCase();
+      const name = document.getElementById("guest-name").value.trim() || "Invité";
+      if (!code) { document.getElementById("guest-err").textContent = "Entre un code."; return; }
+      myName = name; isMJ = false;
+      if (!myId) myId = Math.random().toString(36).slice(2, 10); localStorage.setItem("bm_uid", myId);
+      startConnecting();
+      connectWS(() => send({ type: "JOIN_LOBBY", code, userId: myId, name }));
+    }
+
+    function backToDash() {
+      if (ws) ws.close();
+      document.getElementById("game").style.display = "none";
+      if (authUser) showDashboard(); else showScreen("auth-screen");
+    }
+
+    // ════════════════════════════════════════
+    // WEBSOCKET
+    // ════════════════════════════════════════
+    function connectWS(cb) {
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      ws = new WebSocket(`${proto}://${location.host}`);
+      ws.onopen = cb;
+      ws.onmessage = e => handleMsg(JSON.parse(e.data));
+      ws.onclose = () => { if (document.getElementById("game").style.display !== "none") toast("Connexion perdue."); }
+    }
+    function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+    function startConnecting() { document.getElementById("connecting").style.display = "flex"; }
+    function stopConnecting() { document.getElementById("connecting").style.display = "none"; }
+
+    // ════════════════════════════════════════
+    // MESSAGES
+    // ════════════════════════════════════════
+    function handleMsg(msg) {
+      switch (msg.type) {
+        case "LOBBY_JOINED":
+          stopConnecting();
+          myId = msg.userId; lobbyCode = msg.code;
+          if (msg.isMJ) isMJ = true;
+          applyState(msg.state); enterGame(); break;
+        case "ERROR":
+          stopConnecting();
+          document.getElementById("join-err") && (document.getElementById("join-err").textContent = msg.message);
+          document.getElementById("guest-err") && (document.getElementById("guest-err").textContent = msg.message);
+          document.getElementById("dash-join-err") && (document.getElementById("dash-join-err").textContent = msg.message);
+          toast(msg.message); break;
+        case "SET_TOKEN": {
+          const t = msg.token;
+          tokens[t.tokenId] = {
+            ...t, id: t.tokenId, ranges: t.ranges || [], notes: t.notes || "",
+            hp: t.hp ?? null, maxHp: t.maxHp ?? null, size: t.size || "Medium", sizeN: t.sizeN || 1, conditions: t.conditions || []
+          };
+          drawAll(); break;
+        }
+        case "DELETE_TOKEN": delete tokens[msg.tokenId]; drawAll(); break;
+        case "SET_RANGES": if (tokens[msg.tokenId]) tokens[msg.tokenId].ranges = msg.ranges; drawAll(); break;
+        case "SET_DRAWING": drawings[msg.drawing.drawId] = msg.drawing; drawAll(); break;
+        case "DELETE_DRAWING": delete drawings[msg.drawId]; drawAll(); break;
+        case "CLEAR_DRAWINGS": drawings = {}; drawAll(); break;
+        case "SET_OBSTACLE": obstacles[msg.obstacle.obsId] = msg.obstacle; drawAll(); break;
+        case "DELETE_OBSTACLE": delete obstacles[msg.obsId]; drawAll(); break;
+        case "CLEAR_OBSTACLES": obstacles = {}; drawAll(); break;
+        case "SET_INITIATIVES": initiatives = msg.initiatives; renderInitiatives(); break;
+        case "PING": pings.push({ x: msg.x, y: msg.y, color: msg.color, born: Date.now() }); animatePings(); break;
+        case "DICE_ROLL": addDiceLog(msg); break;
+        case "SET_IMAGE": bgUrl = msg.imageUrl; loadBg(bgUrl); break;
+        case "CLEAR_ALL": tokens = {}; drawings = {}; obstacles = {}; initiatives = []; renderInitiatives(); drawAll(); break;
+        case "PLAYER_UPDATE": playerIds = msg.playerIds; playerNames = msg.playerNames; updatePlayers(); break;
+        case "HOST_CHANGED":
+          hostId = msg.newHostId;
+          if (msg.newHostId === myId) { isMJ = true; showMJControls(); toast("Tu es maintenant MJ !"); }
+          updatePlayers(); break;
+      }
+    }
+
+    function applyState(s) {
+      hostId = s.hostId; playerIds = s.playerIds || []; playerNames = s.playerNames || {};
+      bgUrl = s.imageUrl || ""; initiatives = s.initiatives || [];
+      tokens = {}; for (const [id, t] of Object.entries(s.tokens || {}))
+        tokens[id] = {
+          ...t, id: t.tokenId || id, ranges: t.ranges || [], notes: t.notes || "",
+          hp: t.hp ?? null, maxHp: t.maxHp ?? null, size: t.size || "Medium", sizeN: t.sizeN || 1, conditions: t.conditions || []
+        };
+      drawings = {}; for (const [id, d] of Object.entries(s.drawings || {})) drawings[id] = d;
+      obstacles = {}; for (const [id, o] of Object.entries(s.obstacles || {})) obstacles[id] = o;
+      if (bgUrl) loadBg(bgUrl);
+    }
+
+    // ════════════════════════════════════════
+    // GAME SCREEN
+    // ════════════════════════════════════════
+    function enterGame() {
+      document.getElementById("game").style.display = "flex";
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("code-badge").textContent = lobbyCode;
+      if (isMJ) showMJControls();
+      buildColors(); buildCondGrid(); buildObsBank(); updatePlayers(); renderInitiatives();
+      resize(); resetView(); drawAll();
+    }
+    function showMJControls() {
+      document.getElementById("mj-controls").style.display = "flex";
+      document.getElementById("mj-init-add").style.display = "flex";
+      document.getElementById("init-next").style.display = "block";
+    }
+
+    // ════════════════════════════════════════
+    // CANVAS
+    // ════════════════════════════════════════
+    function resize() {
+      const wrap = document.getElementById("wrap"), W = wrap.clientWidth, H = wrap.clientHeight;
+      [cGrid, cMain].forEach(c => { c.width = W; c.height = H; });
+      cMini.width = 130; cMini.height = 84; drawAll();
+    }
+    window.addEventListener("resize", resize);
+
+    function loadBg(url) {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      img.onload = () => { bgImg = img; drawAll(); };
+      img.onerror = () => { bgImg = null; toast("Image non chargeable"); drawAll(); };
+      img.src = url;
+    }
+
+    function w2s(mx, my) { return { x: mx * CELL * scale + ox, y: my * CELL * scale + oy }; }
+    function s2w(sx, sy) { return { x: (sx - ox) / (CELL * scale), y: (sy - oy) / (CELL * scale) }; }
+    function snap(v) { return Math.round(v * 2) / 2; }
+    function evXY(e) {
+      const r = cMain.getBoundingClientRect(), s = e.touches ? e.touches[0] : e;
+      return { sx: s.clientX - r.left, sy: s.clientY - r.top };
+    }
+    function tokenSizePx(t) {
+      const n = t.sizeN || DND_SIZES[t.size || "Medium"]?.n || 1;
+      return n * CELL * scale;
+    }
+
+    // ════════════════════════════════════════
+    // DRAW
+    // ════════════════════════════════════════
+    function drawAll() {
+      drawGrid(); drawMain(); drawMini();
+      document.getElementById("zoom-lbl").textContent = Math.round(scale * 100) + "%";
+    }
+
+    function drawGrid() {
+      const W = cGrid.width, H = cGrid.height;
+      gCtx.clearRect(0, 0, W, H);
+      if (bgImg) { gCtx.drawImage(bgImg, ox, oy, bgImg.naturalWidth * scale, bgImg.naturalHeight * scale); }
+      else { gCtx.fillStyle = "#0e1018"; gCtx.fillRect(0, 0, W, H); }
+      if (!showGrid) return;
+      const step = CELL * scale; if (step < 4) return;
+      const sx0 = (ox % step + step) % step, sy0 = (oy % step + step) % step;
+      gCtx.strokeStyle = "#1e2232"; gCtx.lineWidth = 0.6; gCtx.beginPath();
+      for (let x = sx0; x < W; x += step) { gCtx.moveTo(x, 0); gCtx.lineTo(x, H); }
+      for (let y = sy0; y < H; y += step) { gCtx.moveTo(0, y); gCtx.lineTo(W, y); }
+      gCtx.stroke();
+      const s5 = step * 5;
+      if (s5 > 8) {
+        const sx5 = (ox % s5 + s5) % s5, sy5 = (oy % s5 + s5) % s5;
+        gCtx.strokeStyle = "#2a3050"; gCtx.lineWidth = 1; gCtx.beginPath();
+        for (let x = sx5; x < W; x += s5) { gCtx.moveTo(x, 0); gCtx.lineTo(x, H); }
+        for (let y = sy5; y < H; y += s5) { gCtx.moveTo(0, y); gCtx.lineTo(W, y); }
+        gCtx.stroke();
+      }
+      if (tool !== "pan") {
+        const sp = w2s(Math.floor(hoverCell.x), Math.floor(hoverCell.y));
+        gCtx.fillStyle = "#c8a96e0a"; gCtx.strokeStyle = "#c8a96e33"; gCtx.lineWidth = 1;
+        gCtx.fillRect(sp.x, sp.y, step, step); gCtx.strokeRect(sp.x, sp.y, step, step);
+      }
+    }
+
+    const _svgCache = {};
+    function getObsSvgImg(def, cb) {
+      if (_svgCache[def.type]) { cb(_svgCache[def.type]); return; }
+      const blob = new Blob([`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${def.svg}</svg>`], { type: "image/svg+xml" });
+      const img = new Image();
+      img.onload = () => { _svgCache[def.type] = img; cb(img); };
+      img.src = URL.createObjectURL(blob);
+    }
+    function getObsDef(type) { for (const c of OBS_BANK) for (const i of c.items) if (i.type === type) return i; return null; }
+
+    function drawMain() {
+      const W = cMain.width, H = cMain.height;
+      mCtx.clearRect(0, 0, W, H);
+
+      // Obstacles
+      for (const o of Object.values(obstacles)) {
+        const def = getObsDef(o.obsType); if (!def) continue;
+        const sp = w2s(o.x, o.y);
+        const pw = def.w * CELL * scale * (o.scale || 1), ph = def.h * CELL * scale * (o.scale || 1);
+        getObsSvgImg(def, img => {
+          mCtx.save(); mCtx.translate(sp.x + pw / 2, sp.y + ph / 2);
+          if (o.rotation) mCtx.rotate(o.rotation * Math.PI / 180);
+          mCtx.drawImage(img, -pw / 2, -ph / 2, pw, ph); mCtx.restore();
+        });
+      }
+
+      // Drawings
+      for (const d of Object.values(drawings)) {
+        mCtx.save(); mCtx.strokeStyle = d.color; mCtx.lineWidth = d.width || 2; mCtx.lineCap = "round"; mCtx.lineJoin = "round";
+        if (d.drawType === "free" && d.points.length > 1) {
+          mCtx.beginPath(); const p0 = w2s(d.points[0][0], d.points[0][1]); mCtx.moveTo(p0.x, p0.y);
+          for (let i = 1; i < d.points.length; i++) { const p = w2s(d.points[i][0], d.points[i][1]); mCtx.lineTo(p.x, p.y); }
+          mCtx.stroke();
+        } else if (d.drawType === "line" && d.points.length >= 2) {
+          const a = w2s(d.points[0][0], d.points[0][1]), b = w2s(d.points[1][0], d.points[1][1]);
+          mCtx.beginPath(); mCtx.moveTo(a.x, a.y); mCtx.lineTo(b.x, b.y); mCtx.stroke();
+        } else if (d.drawType === "rect" && d.points.length >= 2) {
+          const a = w2s(d.points[0][0], d.points[0][1]), b = w2s(d.points[1][0], d.points[1][1]);
+          mCtx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        } else if (d.drawType === "arrow" && d.points.length >= 2) {
+          const a = w2s(d.points[0][0], d.points[0][1]), b = w2s(d.points[1][0], d.points[1][1]);
+          drawArrow(mCtx, a.x, a.y, b.x, b.y, d.color, d.width || 2);
+        }
+        mCtx.restore();
+      }
+
+      // Range circles
+      for (const t of Object.values(tokens)) {
+        if (!t.ranges?.length) continue;
+        const sp = w2s(t.x, t.y);
+        const sz = t.sizeN || DND_SIZES[t.size || "Medium"]?.n || 1;
+        const cx = sp.x + sz * CELL * scale / 2, cy = sp.y + sz * CELL * scale / 2;
+        for (const rng of t.ranges) {
+          const rpx = rng.r * CELL * scale, col = rng.color;
+          mCtx.beginPath(); mCtx.arc(cx, cy, rpx, 0, Math.PI * 2);
+          mCtx.fillStyle = col + "12"; mCtx.fill();
+          mCtx.beginPath(); mCtx.arc(cx, cy, rpx, 0, Math.PI * 2);
+          mCtx.strokeStyle = col; mCtx.lineWidth = 2; mCtx.setLineDash([]); mCtx.stroke();
+          mCtx.beginPath(); mCtx.arc(cx, cy, rpx - 3, 0, Math.PI * 2);
+          mCtx.strokeStyle = col + "30"; mCtx.lineWidth = 2; mCtx.stroke();
+          if (rpx > 18) {
+            const lx = cx, ly = cy - rpx, lbl = `${rng.r}m`;
+            const fs = Math.max(9, Math.round(10 * Math.min(1, scale)));
+            mCtx.font = `bold ${fs}px sans-serif`;
+            const tw = mCtx.measureText(lbl).width;
+            mCtx.fillStyle = "#0d0f14cc"; mCtx.beginPath(); mCtx.roundRect(lx - tw / 2 - 4, ly - fs / 2 - 2, tw + 8, fs + 4, 3); mCtx.fill();
+            mCtx.strokeStyle = col; mCtx.lineWidth = 1; mCtx.stroke();
+            mCtx.fillStyle = col; mCtx.textAlign = "center"; mCtx.textBaseline = "middle"; mCtx.fillText(lbl, lx, ly);
+          }
+        }
+      }
+
+      // Tokens
+      for (const t of Object.values(tokens)) {
+        const sz = t.sizeN || DND_SIZES[t.size || "Medium"]?.n || 1;
+        const spx = w2s(t.x, t.y);
+        const pw = sz * CELL * scale, ph = sz * CELL * scale;
+        const cx = spx.x + pw / 2, cy = spx.y + ph / 2;
+        const r = Math.min(pw / 2, TR * Math.max(0.4, Math.min(1.5, scale)));
+        const mine = t.userId === myId;
+        const isActive = initiatives.length > 0 && initiatives[currentTurn]?.tokenId === t.id;
+
+        // Size indicator (square footprint for large+)
+        if (sz > 1) {
+          mCtx.strokeStyle = t.color + "44"; mCtx.lineWidth = 1; mCtx.setLineDash([3, 3]);
+          mCtx.strokeRect(spx.x, spx.y, pw, ph); mCtx.setLineDash([]);
+        }
+
+        mCtx.shadowColor = t.color + (isActive ? "ff" : "88"); mCtx.shadowBlur = isActive ? 20 : mine ? 12 : 4;
+        mCtx.beginPath(); mCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        mCtx.fillStyle = t.color; mCtx.fill(); mCtx.shadowBlur = 0;
+        mCtx.strokeStyle = isActive ? "#fff" : mine ? "#ffffffaa" : "#00000044";
+        mCtx.lineWidth = isActive ? 3 : mine ? 2 : 1.5; mCtx.stroke();
+        if (isActive) { mCtx.beginPath(); mCtx.arc(cx, cy, r + 5, 0, Math.PI * 2); mCtx.strokeStyle = "#c8a96e88"; mCtx.lineWidth = 2; mCtx.stroke(); }
+
+        // Label
+        if (r > 7 && t.label) {
+          mCtx.fillStyle = "#fff"; mCtx.font = `bold ${Math.round(r * .82)}px sans-serif`;
+          mCtx.textAlign = "center"; mCtx.textBaseline = "middle";
+          mCtx.shadowColor = "#00000077"; mCtx.shadowBlur = 3;
+          mCtx.fillText(t.label.charAt(0).toUpperCase(), cx, cy); mCtx.shadowBlur = 0;
+        }
+
+        // HP bar
+        if (t.hp !== null && t.maxHp && t.maxHp > 0 && r > 8) {
+          const bw = pw * .9, bh = 4, bx = cx - bw / 2, by = cy + r + 3;
+          mCtx.fillStyle = "#0d0f14aa"; mCtx.fillRect(bx, by, bw, bh);
+          const pct = Math.max(0, Math.min(1, t.hp / t.maxHp));
+          mCtx.fillStyle = pct > 0.5 ? "#52c97a" : pct > 0.25 ? "#f4c430" : "#e05252";
+          mCtx.fillRect(bx, by, bw * pct, bh);
+          mCtx.strokeStyle = "#00000066"; mCtx.lineWidth = 0.5; mCtx.strokeRect(bx, by, bw, bh);
+        }
+
+        // Conditions icons
+        if (t.conditions?.length && r > 6) {
+          const iconSize = Math.max(10, Math.round(14 * Math.min(1, scale)));
+          t.conditions.slice(0, 5).forEach((cid, i) => {
+            const cdef = DND_CONDITIONS.find(c => c.id === cid); if (!cdef) return;
+            const ix = spx.x + i * (iconSize + 2); const iy = spx.y - iconSize - 2;
+            mCtx.font = `${iconSize}px sans-serif`;
+            mCtx.textAlign = "left"; mCtx.textBaseline = "top";
+            mCtx.fillText(cdef.icon, ix, iy);
+          });
+        }
+
+        // Size label (if large+)
+        if (sz >= 2 && r > 10) {
+          mCtx.fillStyle = t.color + "aa"; mCtx.font = `${Math.round(9 * Math.min(1, scale))}px sans-serif`;
+          mCtx.textAlign = "center"; mCtx.textBaseline = "bottom";
+          mCtx.fillText(t.size || "", cx, spx.y + ph + 2);
+        }
+      }
+
+      // Ruler
+      if (rulerStart && rulerEnd) {
+        const a = w2s(rulerStart.x, rulerStart.y), b = w2s(rulerEnd.x, rulerEnd.y);
+        mCtx.setLineDash([6, 4]); mCtx.strokeStyle = "#f4c430"; mCtx.lineWidth = 2;
+        mCtx.beginPath(); mCtx.moveTo(a.x, a.y); mCtx.lineTo(b.x, b.y); mCtx.stroke(); mCtx.setLineDash([]);
+        [a, b].forEach(p => { mCtx.beginPath(); mCtx.arc(p.x, p.y, 4, 0, Math.PI * 2); mCtx.fillStyle = "#f4c430"; mCtx.fill(); });
+        const dist = Math.hypot(rulerEnd.x - rulerStart.x, rulerEnd.y - rulerStart.y);
+        const dl = document.getElementById("dist-label");
+        dl.style.display = "block"; dl.style.left = ((a.x + b.x) / 2 + 8) + "px"; dl.style.top = ((a.y + b.y) / 2 - 12) + "px";
+        dl.textContent = dist.toFixed(1) + " m";
+      } else document.getElementById("dist-label").style.display = "none";
+
+      // Pings
+      const now = Date.now(); pings = pings.filter(p => now - p.born < 2200);
+      for (const p of pings) {
+        const sp = w2s(p.x, p.y), age = (now - p.born) / 2200;
+        mCtx.beginPath(); mCtx.arc(sp.x, sp.y, (1 - age) * 28 * scale, 0, Math.PI * 2);
+        mCtx.strokeStyle = p.color + (Math.floor((1 - age) * 99).toString(16).padStart(2, "0")); mCtx.lineWidth = 2; mCtx.stroke();
+        mCtx.beginPath(); mCtx.arc(sp.x, sp.y, (1 - age) * 16 * scale, 0, Math.PI * 2);
+        mCtx.fillStyle = p.color + (Math.floor((1 - age) * 80).toString(16).padStart(2, "0")); mCtx.fill();
+      }
+    }
+
+    function drawArrow(ctx, x1, y1, x2, y2, color, w) {
+      const angle = Math.atan2(y2 - y1, x2 - x1), len = 12 + w * 2;
+      ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.fillStyle = color; ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - len * Math.cos(angle - 0.4), y2 - len * Math.sin(angle - 0.4));
+      ctx.lineTo(x2 - len * Math.cos(angle + 0.4), y2 - len * Math.sin(angle + 0.4));
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawMini() {
+      const MW = cMini.width, MH = cMini.height, WW = 40, WH = 25, sm = Math.min(MW / WW, MH / WH);
+      miniCtx.clearRect(0, 0, MW, MH); miniCtx.fillStyle = "#0e1018"; miniCtx.fillRect(0, 0, MW, MH);
+      miniCtx.strokeStyle = "#1e2232"; miniCtx.lineWidth = 0.5;
+      for (let x = 0; x <= WW; x += 5) { miniCtx.beginPath(); miniCtx.moveTo(x * sm, 0); miniCtx.lineTo(x * sm, MH); miniCtx.stroke(); }
+      for (let y = 0; y <= WH; y += 5) { miniCtx.beginPath(); miniCtx.moveTo(0, y * sm); miniCtx.lineTo(MW, y * sm); miniCtx.stroke(); }
+      for (const t of Object.values(tokens)) {
+        const sz = t.sizeN || DND_SIZES[t.size || "Medium"]?.n || 1;
+        miniCtx.beginPath(); miniCtx.arc((t.x + sz / 2) * sm, (t.y + sz / 2) * sm, Math.max(2, sz * sm / 2), 0, Math.PI * 2);
+        miniCtx.fillStyle = t.color; miniCtx.fill();
+      }
+      const W = cMain.width, H = cMain.height;
+      const vx = -ox / (CELL * scale), vy = -oy / (CELL * scale), vw = W / (CELL * scale), vh = H / (CELL * scale);
+      const mmR = document.getElementById("minimap").getBoundingClientRect();
+      const vp = document.getElementById("mm-vp");
+      vp.style.left = Math.max(0, vx * sm * mmR.width / MW) + "px"; vp.style.top = Math.max(0, vy * sm * mmR.height / MH) + "px";
+      vp.style.width = Math.min(mmR.width, vw * sm * mmR.width / MW) + "px"; vp.style.height = Math.min(mmR.height, vh * sm * mmR.height / MH) + "px";
+    }
+
+    // ════════════════════════════════════════
+    // CAMERA
+    // ════════════════════════════════════════
+    function zoomBy(f, cx, cy) {
+      if (cx == null) { cx = cMain.width / 2; cy = cMain.height / 2; }
+      const ns = Math.max(.15, Math.min(6, scale * f));
+      ox = cx - (cx - ox) * (ns / scale); oy = cy - (cy - oy) * (ns / scale); scale = ns; drawAll();
+    }
+    function resetView() { scale = 1; ox = cMain.width / 2 - 10 * CELL; oy = cMain.height / 2 - 10 * CELL; drawAll(); }
+
+    // ════════════════════════════════════════
+    // POINTER
+    // ════════════════════════════════════════
+    function tokenAt(wx, wy) {
+      const arr = Object.values(tokens);
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const t = arr[i];
+        const sz = t.sizeN || DND_SIZES[t.size || "Medium"]?.n || 1;
+        if (wx >= t.x && wx <= t.x + sz && wy >= t.y && wy <= t.y + sz) return t;
+      }
+      return null;
+    }
+    function obsAt(wx, wy) {
+      if (!isMJ) return null;
+      for (const o of Object.values(obstacles)) {
+        const def = getObsDef(o.obsType); if (!def) continue;
+        if (wx >= o.x && wx <= o.x + def.w * (o.scale || 1) && wy >= o.y && wy <= o.y + def.h * (o.scale || 1)) return o;
+      }
+      return null;
+    }
+
+    cMain.addEventListener("pointerdown", e => { e.preventDefault(); onDown(e); });
+    cMain.addEventListener("pointermove", e => { e.preventDefault(); onMove(e); });
+    cMain.addEventListener("pointerup", e => { e.preventDefault(); onUp(e); });
+    cMain.addEventListener("pointerleave", () => document.getElementById("hover-info").classList.remove("show"));
+    cMain.addEventListener("contextmenu", e => {
+      e.preventDefault(); const { sx, sy } = evXY(e), wxy = s2w(sx, sy);
+      const hit = tokenAt(wxy.x, wxy.y);
+      if (hit) { openTokenPopup(hit.id, sx, sy); return; }
+      if (isMJ) {
+        const o = obsAt(wxy.x, wxy.y);
+        if (o) { o.rotation = (o.rotation || 0) + 45; send({ type: "SET_OBSTACLE", ...o }); drawAll(); }
+      }
+    });
+    cMain.addEventListener("wheel", e => { e.preventDefault(); const { sx, sy } = evXY(e); zoomBy(e.deltaY < 0 ? 1.1 : 0.91, sx, sy); }, { passive: false });
+    cMain.addEventListener("touchstart", e => {
+      if (e.touches.length === 2) pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }, { passive: false });
+    cMain.addEventListener("touchmove", e => {
+      if (e.touches.length === 2 && pinchDist != null) {
+        e.preventDefault();
+        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const r = cMain.getBoundingClientRect();
+        zoomBy(d / pinchDist, (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top);
+        pinchDist = d;
+      }
+    }, { passive: false });
+    cMain.addEventListener("touchend", () => { pinchDist = null; });
+
+    function onDown(e) {
+      closeRangePopup(); closeTokenPopup();
+      const { sx, sy } = evXY(e), wxy = s2w(sx, sy);
+      if (tool === "pan") { panning = true; panStart = { sx, sy, ox, oy }; cMain.style.cursor = "grabbing"; return; }
+      if (pendingObsType && isMJ) {
+        const def = getObsDef(pendingObsType);
+        const obsId = "o_" + Date.now();
+        const o = { obsId, obsType: pendingObsType, x: snap(wxy.x), y: snap(wxy.y), rotation: 0, scale: 1 };
+        obstacles[obsId] = o; send({ type: "SET_OBSTACLE", ...o }); drawAll(); return;
+      }
+      if (tool === "token") {
+        const hit = tokenAt(wxy.x, wxy.y);
+        if (hit) { if (hit.userId === myId || isMJ) dragging = { id: hit.id, dx: wxy.x - hit.x, dy: wxy.y - hit.y }; }
+        else {
+          const tid = "t_" + myId + "_" + Date.now();
+          const t = {
+            id: tid, tokenId: tid, x: snap(wxy.x), y: snap(wxy.y), color: activeColor, label: myName,
+            userId: myId, ranges: [], notes: "", hp: null, maxHp: null, size: "Medium", sizeN: 1, conditions: []
+          };
+          tokens[tid] = t;
+          send({ type: "SET_TOKEN", tokenId: tid, x: t.x, y: t.y, color: activeColor, label: myName, userId: myId, size: "Medium", sizeN: 1 });
+          dragging = { id: tid, dx: 0, dy: 0 }; drawAll();
+        }
+        return;
+      }
+      if (tool === "range") { const hit = tokenAt(wxy.x, wxy.y); if (hit) openRangePopup(hit.id, sx, sy); else toast("Clique sur un pion"); return; }
+      if (tool === "ruler") { rulerStart = { x: wxy.x, y: wxy.y }; rulerEnd = { x: wxy.x, y: wxy.y }; return; }
+      if (tool === "draw") {
+        const did = "d_" + myId + "_" + Date.now(); drawingActive = did;
+        if (drawStyle === "free") { drawPoints = [[wxy.x, wxy.y]]; } else { drawShapeStart = { x: wxy.x, y: wxy.y }; } return;
+      }
+      if (tool === "ping") { triggerPing(wxy.x, wxy.y); return; }
+      if (tool === "delete") {
+        const hit = tokenAt(wxy.x, wxy.y);
+        if (hit && (hit.userId === myId || isMJ)) { delete tokens[hit.id]; send({ type: "DELETE_TOKEN", tokenId: hit.id }); drawAll(); return; }
+        if (isMJ) { const o = obsAt(wxy.x, wxy.y); if (o) { delete obstacles[o.obsId]; send({ type: "DELETE_OBSTACLE", obsId: o.obsId }); drawAll(); return; } }
+        for (const [id, d] of Object.entries(drawings)) {
+          if (d.userId === myId || isMJ) {
+            const near = d.points.some(([mx, my]) => { const sp = w2s(mx, my); return Math.hypot(sp.x - sx, sp.y - sy) < 16; });
+            if (near) { delete drawings[id]; send({ type: "DELETE_DRAWING", drawId: id }); drawAll(); return; }
+          }
+        }
+      }
+      // Pan mode — drag obstacle
+      if (tool === "pan" && isMJ) { const o = obsAt(wxy.x, wxy.y); if (o) draggingObs = { id: o.obsId, dx: wxy.x - o.x, dy: wxy.y - o.y }; }
+    }
+
+    function onMove(e) {
+      const { sx, sy } = evXY(e), wxy = s2w(sx, sy);
+      hoverCell = wxy;
+      document.getElementById("hover-info").textContent = `${wxy.x.toFixed(1)}m, ${wxy.y.toFixed(1)}m`;
+      document.getElementById("hover-info").classList.add("show");
+      if (panning) { ox = panStart.ox + (sx - panStart.sx); oy = panStart.oy + (sy - panStart.sy); drawAll(); return; }
+      if (dragging) { const t = tokens[dragging.id]; if (t) { t.x = snap(wxy.x - dragging.dx); t.y = snap(wxy.y - dragging.dy); drawAll(); } return; }
+      if (draggingObs) { const o = obstacles[draggingObs.id]; if (o) { o.x = snap(wxy.x - draggingObs.dx); o.y = snap(wxy.y - draggingObs.dy); drawAll(); } return; }
+      if (tool === "ruler" && rulerStart) { rulerEnd = { x: wxy.x, y: wxy.y }; drawAll(); return; }
+      if (tool === "draw" && drawingActive) {
+        if (drawStyle === "free") {
+          drawPoints.push([wxy.x, wxy.y]);
+          if (drawPoints.length % 8 === 0) send({ type: "SET_DRAWING", drawId: drawingActive, drawType: "free", points: [...drawPoints], color: activeColor, width: 2 });
+          drawAll();
+        } else if (drawShapeStart) {
+          drawAll(); const a = w2s(drawShapeStart.x, drawShapeStart.y), b = w2s(wxy.x, wxy.y);
+          mCtx.strokeStyle = activeColor; mCtx.lineWidth = 2; mCtx.setLineDash([4, 3]); mCtx.beginPath();
+          if (drawStyle === "line" || drawStyle === "arrow") { mCtx.moveTo(a.x, a.y); mCtx.lineTo(b.x, b.y); mCtx.stroke(); }
+          else if (drawStyle === "rect") { mCtx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y); }
+          mCtx.setLineDash([]);
+        }
+        return;
+      }
+      drawGrid();
+    }
+
+    function onUp(e) {
+      const { sx, sy } = evXY(e), wxy = s2w(sx, sy);
+      if (dragging) {
+        const t = tokens[dragging.id];
+        if (t) send({ type: "SET_TOKEN", tokenId: t.id, x: t.x, y: t.y, color: t.color, label: t.label, userId: t.userId, notes: t.notes, hp: t.hp, maxHp: t.maxHp, size: t.size, sizeN: t.sizeN, conditions: t.conditions });
+        dragging = null;
+      }
+      if (draggingObs) { const o = obstacles[draggingObs.id]; if (o) send({ type: "SET_OBSTACLE", ...o }); draggingObs = null; }
+      if (panning) { panning = false; cMain.style.cursor = "grab"; }
+      if (tool === "draw" && drawingActive) {
+        if (drawStyle === "free" && drawPoints.length > 1) {
+          send({ type: "SET_DRAWING", drawId: drawingActive, drawType: "free", points: [...drawPoints], color: activeColor, width: 2 });
+          drawings[drawingActive] = { drawId: drawingActive, drawType: "free", points: [...drawPoints], color: activeColor, width: 2, userId: myId };
+        } else if (drawShapeStart && drawStyle !== "free") {
+          const pts = [[drawShapeStart.x, drawShapeStart.y], [wxy.x, wxy.y]];
+          send({ type: "SET_DRAWING", drawId: drawingActive, drawType: drawStyle, points: pts, color: activeColor, width: 2 });
+          drawings[drawingActive] = { drawId: drawingActive, drawType: drawStyle, points: pts, color: activeColor, width: 2, userId: myId };
+        }
+        drawingActive = null; drawPoints = []; drawShapeStart = null; drawAll();
+      }
+    }
+
+    // ════════════════════════════════════════
+    // PING
+    // ════════════════════════════════════════
+    function triggerPing(wx, wy) { send({ type: "PING", x: wx, y: wy, color: activeColor }); pings.push({ x: wx, y: wy, color: activeColor, born: Date.now() }); animatePings(); }
+    let _praf = null;
+    function animatePings() { if (_praf) return; function loop() { drawAll(); if (pings.length > 0) _praf = requestAnimationFrame(loop); else _praf = null; } _praf = requestAnimationFrame(loop); }
+
+    // ════════════════════════════════════════
+    // TOKEN POPUP
+    // ════════════════════════════════════════
+    function buildCondGrid() {
+      const grid = document.getElementById("cond-grid"); grid.innerHTML = "";
+      DND_CONDITIONS.forEach(c => {
+        const btn = document.createElement("button"); btn.className = "cond-btn"; btn.dataset.id = c.id; btn.dataset.color = c.color;
+        btn.innerHTML = `${c.icon} ${c.label}`;
+        btn.onclick = () => btn.classList.toggle("on");
+        grid.appendChild(btn);
+      });
+    }
+
+    function openTokenPopup(tokenId, sx, sy) {
+      tokenPopupTarget = tokenId; const t = tokens[tokenId];
+      document.getElementById("tp-title").textContent = t.label || "Pion";
+      document.getElementById("tp-label").value = t.label || "";
+      document.getElementById("tp-hp").value = t.hp ?? "";
+      document.getElementById("tp-maxhp").value = t.maxHp ?? "";
+      const sizeEl = document.getElementById("tp-size");
+      sizeEl.value = t.size || "Medium";
+      document.getElementById("tp-sizen-row").style.display = t.size === "Custom" ? "flex" : "none";
+      document.getElementById("tp-sizen").value = t.sizeN || 1;
+      sizeEl.onchange = () => { document.getElementById("tp-sizen-row").style.display = sizeEl.value === "Custom" ? "flex" : "none"; };
+      document.querySelectorAll(".cond-btn").forEach(btn => {
+        btn.classList.toggle("on", (t.conditions || []).includes(btn.dataset.id));
+      });
+      document.getElementById("tp-notes").value = t.notes || "";
+      const pop = document.getElementById("token-popup");
+      const wR = document.getElementById("wrap").getBoundingClientRect();
+      let px = sx + 10, py = sy - 10; pop.style.display = "block";
+      if (px + 270 > wR.width) px = sx - 270; if (py + 340 > wR.height) py = Math.max(4, wR.height - 344);
+      pop.style.left = Math.max(4, px) + "px"; pop.style.top = Math.max(4, py) + "px";
+    }
+    function closeTokenPopup() { document.getElementById("token-popup").style.display = "none"; tokenPopupTarget = null; }
+    function saveTokenPopup() {
+      if (!tokenPopupTarget) return; const t = tokens[tokenPopupTarget]; if (!t) return;
+      t.label = document.getElementById("tp-label").value || t.label;
+      t.hp = parseFloat(document.getElementById("tp-hp").value) || null;
+      t.maxHp = parseFloat(document.getElementById("tp-maxhp").value) || null;
+      const sizeVal = document.getElementById("tp-size").value;
+      t.size = sizeVal;
+      t.sizeN = sizeVal === "Custom"
+        ? (parseFloat(document.getElementById("tp-sizen").value) || 1)
+        : (DND_SIZES[sizeVal]?.n || 1);
+      t.conditions = [...document.querySelectorAll(".cond-btn.on")].map(b => b.dataset.id);
+      t.notes = document.getElementById("tp-notes").value;
+      send({
+        type: "SET_TOKEN", tokenId: t.id, x: t.x, y: t.y, color: t.color, label: t.label, userId: t.userId,
+        notes: t.notes, hp: t.hp, maxHp: t.maxHp, size: t.size, sizeN: t.sizeN, conditions: t.conditions
+      });
+      closeTokenPopup(); drawAll();
+    }
+
+    // ════════════════════════════════════════
+    // RANGE POPUP
+    // ════════════════════════════════════════
+    function openRangePopup(tokenId, sx, sy) {
+      rangeTarget = tokenId; const t = tokens[tokenId];
+      document.getElementById("rp-title").textContent = `Portée — ${t.label}`;
+      const strip = document.getElementById("rp-colors"); strip.innerHTML = ""; strip.style.display = "flex"; strip.style.gap = "5px";
+      RANGE_COLS.forEach(c => {
+        const s = document.createElement("div"); s.className = "rc-sw" + (c === rangeColor ? " on" : ""); s.style.background = c;
+        s.onclick = () => { strip.querySelectorAll(".rc-sw").forEach(x => x.classList.remove("on")); s.classList.add("on"); rangeColor = c; };
+        strip.appendChild(s);
+      });
+      const pre = document.getElementById("rp-presets"); pre.innerHTML = "";
+      RANGE_PRESETS.forEach(p => {
+        const b = document.createElement("button"); b.className = "rp-btn"; b.textContent = p.l;
+        b.onclick = () => { addRange(tokenId, p.m); closeRangePopup(); }; pre.appendChild(b);
+      });
+      const clr = document.createElement("button"); clr.className = "rp-btn"; clr.textContent = "✕ Effacer"; clr.style.color = "var(--red)";
+      clr.onclick = () => { tokens[tokenId].ranges = []; send({ type: "SET_RANGES", tokenId, ranges: [] }); drawAll(); closeRangePopup(); };
+      pre.appendChild(clr);
+      document.getElementById("rp-input").value = "";
+      const wR = document.getElementById("wrap").getBoundingClientRect();
+      let px = sx + 10, py = sy - 10; const pop = document.getElementById("range-popup"); pop.style.display = "block";
+      if (px + 225 > wR.width) px = sx - 225; if (py + 220 > wR.height) py = sy - 220;
+      pop.style.left = Math.max(4, px) + "px"; pop.style.top = Math.max(4, py) + "px";
+    }
+    function closeRangePopup() { document.getElementById("range-popup").style.display = "none"; rangeTarget = null; }
+    function addRange(tokenId, m) {
+      const t = tokens[tokenId]; if (!t) return;
+      const ex = t.ranges.findIndex(r => r.r === m && r.color === rangeColor);
+      if (ex >= 0) t.ranges.splice(ex, 1); else t.ranges.push({ r: m, color: rangeColor });
+      send({ type: "SET_RANGES", tokenId, ranges: t.ranges }); drawAll();
+    }
+    function applyCustomRange() {
+      const v = parseFloat(document.getElementById("rp-input").value);
+      if (!rangeTarget || isNaN(v) || v <= 0 || v > 500) { toast("Valeur invalide"); return; }
+      addRange(rangeTarget, v); closeRangePopup();
+    }
+
+    // ════════════════════════════════════════
+    // INITIATIVE
+    // ════════════════════════════════════════
+    function togglePanel(id) { document.getElementById(id).classList.toggle("open"); }
+    function renderInitiatives() {
+      const list = document.getElementById("init-list"); list.innerHTML = "";
+      [...initiatives].sort((a, b) => b.value - a.value).forEach(ini => {
+        const row = document.createElement("div");
+        row.className = "init-row" + (initiatives[currentTurn]?.tokenId === ini.tokenId ? " active-turn" : "");
+        row.innerHTML = `<span class="init-val">${ini.value}</span><span class="init-name">${ini.name}</span>
+      ${isMJ ? `<button class="init-del" onclick="removeInit('${ini.tokenId}')">✕</button>` : ""}`;
+        list.appendChild(row);
+      });
+      const banner = document.getElementById("current-turn-banner");
+      if (initiatives.length > 0) { banner.textContent = `Tour : ${initiatives[currentTurn]?.name || "?"}`; banner.style.display = "block"; }
+      else banner.style.display = "none";
+      drawAll();
+    }
+    function addInitEntry() {
+      const name = document.getElementById("init-name-in").value.trim();
+      const val = parseInt(document.getElementById("init-val-in").value) || 0;
+      if (!name) return;
+      const tok = Object.values(tokens).find(t => t.label === name);
+      initiatives.push({ tokenId: tok?.id || ("npc_" + Date.now()), name, value: val });
+      initiatives.sort((a, b) => b.value - a.value);
+      send({ type: "SET_INITIATIVES", initiatives }); renderInitiatives();
+      document.getElementById("init-name-in").value = ""; document.getElementById("init-val-in").value = "";
+    }
+    function removeInit(tid) { initiatives = initiatives.filter(i => i.tokenId !== tid); send({ type: "SET_INITIATIVES", initiatives }); renderInitiatives(); }
+    function nextTurn() { if (!initiatives.length) return; currentTurn = (currentTurn + 1) % initiatives.length; send({ type: "SET_INITIATIVES", initiatives }); renderInitiatives(); }
+
+    // ════════════════════════════════════════
+    // DICE
+    // ════════════════════════════════════════
+    function toggleDice() { const p = document.getElementById("dice-panel"); p.style.display = p.style.display === "block" ? "none" : "block"; }
+    function rollDice(sides) {
+      const result = Math.floor(Math.random() * sides) + 1;
+      const msg = { type: "DICE_ROLL", dice: `d${sides}`, result, rolls: [result] };
+      send(msg); addDiceLog({ ...msg, name: myName });
+    }
+    function rollCustomDice() {
+      const count = Math.min(20, parseInt(document.getElementById("dice-count").value) || 1);
+      const sides = Math.min(1000, parseInt(document.getElementById("dice-sides").value) || 6);
+      const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+      const result = rolls.reduce((a, b) => a + b, 0);
+      const msg = { type: "DICE_ROLL", dice: `${count}d${sides}`, result, rolls };
+      send(msg); addDiceLog({ ...msg, name: myName });
+    }
+    function addDiceLog(msg) {
+      diceLog.unshift(msg); if (diceLog.length > 20) diceLog.pop();
+      document.getElementById("dice-log").innerHTML = diceLog.map(e =>
+        `<div class="dice-entry"><span class="dname">${e.name}</span> <b>${e.dice}</b> → <span class="dval">${e.result}</span>
+    <span style="color:var(--muted);font-size:.65rem">(${e.rolls.join("+")})</span></div>`).join("");
+      document.getElementById("dice-panel").style.display = "block";
+      toast(`🎲 ${msg.name} : ${msg.dice} = ${msg.result}`);
+    }
+
+    // ════════════════════════════════════════
+    // OBSTACLE BANK
+    // ════════════════════════════════════════
+    function buildObsBank() {
+      const bank = document.getElementById("obs-bank"); bank.innerHTML = "";
+      for (const cat of OBS_BANK) {
+        const title = document.createElement("div"); title.className = "obs-cat-title"; title.textContent = cat.cat; bank.appendChild(title);
+        const grid = document.createElement("div"); grid.className = "obs-grid";
+        for (const it of cat.items) {
+          const item = document.createElement("div"); item.className = "obs-item";
+          item.innerHTML = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${it.svg}</svg><span>${it.label}</span>`;
+          item.onclick = () => {
+            pendingObsType = it.type; setTool("token");
+            toast(`${it.label} — Cliquer sur la carte pour placer`);
+            togglePanel("obs-panel");
+            document.querySelectorAll(".obs-item").forEach(x => x.classList.remove("sel")); item.classList.add("sel");
+          };
+          grid.appendChild(item);
+        }
+        bank.appendChild(grid);
+        const sep = document.createElement("hr"); sep.className = "obs-sep"; bank.appendChild(sep);
+      }
+      const clr = document.createElement("button"); clr.id = "obs-clear"; clr.textContent = "✕ Effacer tous les obstacles";
+      clr.onclick = () => { if (confirm("Effacer tous les obstacles ?")) clearObstacles(); }; bank.appendChild(clr);
+    }
+    function clearObstacles() { obstacles = {}; send({ type: "CLEAR_OBSTACLES" }); drawAll(); }
+
+    // ════════════════════════════════════════
+    // UI HELPERS
+    // ════════════════════════════════════════
+    function setTool(t) {
+      if (t !== "ruler") { rulerStart = null; rulerEnd = null; }
+      if (t !== "token") { pendingObsType = null; document.querySelectorAll(".obs-item").forEach(x => x.classList.remove("sel")); }
+      tool = t;
+      document.querySelectorAll(".tbtn[id^='tb-']").forEach(b => b.classList.remove("on"));
+      const btn = document.getElementById("tb-" + t); if (btn) btn.classList.add("on");
+      cMain.style.cursor = t === "pan" ? "grab" : t === "delete" ? "not-allowed" : "crosshair";
+      document.getElementById("draw-opts").style.display = t === "draw" ? "flex" : "none";
+      drawAll();
+    }
+    function setDrawStyle(s) {
+      drawStyle = s;
+      document.querySelectorAll(".tbtn[id^='ds-']").forEach(b => b.classList.remove("on"));
+      document.getElementById("ds-" + s).classList.add("on");
+    }
+    function toggleGrid() { showGrid = !showGrid; document.getElementById("tb-grid").classList.toggle("on", showGrid); drawAll(); }
+    function buildColors() {
+      const strip = document.getElementById("colors"); strip.innerHTML = "";
+      COLORS.forEach((c, i) => {
+        const s = document.createElement("div"); s.className = "swatch" + (i === 0 ? " on" : ""); s.style.background = c;
+        s.onclick = () => { document.querySelectorAll(".swatch").forEach(x => x.classList.remove("on")); s.classList.add("on"); activeColor = c; };
+        strip.appendChild(s);
+      });
+    }
+    function updatePlayers() {
+      const list = document.getElementById("plist"); list.innerHTML = "";
+      playerIds.forEach((id, i) => {
+        const row = document.createElement("div"); row.className = "prow";
+        const dot = document.createElement("span"); dot.className = "pdot"; dot.style.background = COLORS[i % COLORS.length];
+        const name = document.createElement("span");
+        name.textContent = (playerNames[id] || "?") + (id === hostId ? " 👑" : "");
+        if (id === myId) name.style.color = "var(--gold)";
+        row.appendChild(dot); row.appendChild(name); list.appendChild(row);
+      });
+    }
+    function changeImage() {
+      const input = document.createElement("input"); input.type = "file"; input.accept = "image/*";
+      input.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => { bgUrl = ev.target.result; bgImg = null; loadBg(bgUrl); send({ type: "SET_IMAGE", imageUrl: bgUrl }); };
+        reader.readAsDataURL(file);
+      };
+      const choice = confirm("Importer depuis un fichier ?\n(Annuler = entrer une URL)");
+      if (choice) input.click();
+      else {
+        const url = prompt("URL image HTTPS :", bgUrl); if (url === null) return;
+        bgUrl = url.trim(); if (bgUrl) { loadBg(bgUrl); send({ type: "SET_IMAGE", imageUrl: bgUrl }); }
+        else { bgImg = null; drawAll(); }
+      }
+    }
+    function clearAll() { if (!confirm("Effacer TOUT ?")) return; tokens = {}; drawings = {}; obstacles = {}; initiatives = []; send({ type: "CLEAR_ALL" }); renderInitiatives(); drawAll(); }
+    function copyLink() { navigator.clipboard.writeText(`${location.origin}/?lobby=${lobbyCode}`).then(() => toast("Lien copié !")); }
+
+    function showScreen(id) { document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
+
+    let _tt;
+    function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove("show"), 2800); }
+
+    document.addEventListener("pointerdown", e => {
+      const rp = document.getElementById("range-popup"); if (rp.style.display === "block" && !rp.contains(e.target) && e.target !== cMain) closeRangePopup();
+      const tp = document.getElementById("token-popup"); if (tp.style.display === "block" && !tp.contains(e.target) && e.target !== cMain) closeTokenPopup();
+    });
+
+    // ════════════════════════════════════════
+    // INIT — check session on load
+    // ════════════════════════════════════════
+    window.addEventListener("load", async () => {
+      const p = new URLSearchParams(location.search).get("lobby");
+      if (p) { document.getElementById("guest-code").value = p.toUpperCase(); document.getElementById("dash-join-code").value = p.toUpperCase(); }
+      const ok = await checkAuth();
+      if (ok) showDashboard(); else showScreen("auth-screen");
+    });
+  </script>
+</body>
+
+</html>
