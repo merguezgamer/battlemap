@@ -203,18 +203,45 @@ canvas{display:block;position:absolute;top:0;left:0;}
 .rp-custom button{background:var(--gold);color:#0d0f14;border:none;border-radius:6px;padding:5px 11px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.78rem;}
 .popup-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0;}
 
-/* Dice */
-#dice-panel{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);background:#161a24ee;backdrop-filter:blur(8px);border:1px solid var(--bord);border-radius:12px;padding:10px 14px;display:none;z-index:40;}
-.dice-row{display:flex;gap:6px;margin-bottom:7px;flex-wrap:wrap;}
-.d-btn{background:var(--bg);border:1px solid var(--bord);border-radius:6px;color:var(--text);font-size:.72rem;padding:5px 9px;cursor:pointer;font-family:inherit;transition:all .15s;}
-.d-btn:active{border-color:var(--gold);color:var(--gold);transform:scale(.95);}
-.dice-custom{display:flex;gap:6px;align-items:center;}
-.dice-custom input{background:var(--bg);border:1px solid var(--bord);border-radius:6px;color:var(--text);padding:4px 8px;font-size:.78rem;width:44px;text-align:center;outline:none;font-family:inherit;}
-.dice-custom button{background:var(--gold);color:#0d0f14;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.75rem;}
-#dice-log{max-height:80px;overflow-y:auto;margin-top:7px;border-top:1px solid var(--bord);padding-top:6px;scrollbar-width:thin;}
-.dice-entry{font-size:.72rem;margin-bottom:3px;}
-.dice-entry .dval{color:var(--gold);font-weight:700;}
-.dice-entry .dname{color:var(--muted);}
+/* ── DICE PANEL (refonte) ── */
+#dice-panel{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  background:#161a24f0;backdrop-filter:blur(10px);
+  border:1px solid var(--bord);border-radius:14px 14px 0 0;
+  padding:14px 16px 20px;display:none;z-index:40;
+  width:min(400px,100vw);
+  box-shadow:0 -4px 24px #00000066;
+}
+.dice-handle{width:36px;height:4px;background:var(--bord);border-radius:2px;margin:0 auto 12px;}
+.dice-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:10px;text-align:center;}
+.dice-faces{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px;}
+.d-btn{
+  background:var(--surf2);border:1px solid var(--bord);border-radius:8px;
+  color:var(--text);font-size:.78rem;font-weight:700;padding:10px 4px;
+  cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.d-btn .d-icon{font-size:1.1rem;line-height:1;}
+.d-btn:active{border-color:var(--gold);color:var(--gold);transform:scale(.93);background:#c8a96e18;}
+.dice-custom-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.dice-custom-row input{flex:1;background:var(--bg);border:1px solid var(--bord);border-radius:8px;
+  color:var(--text);padding:8px 10px;font-size:.85rem;text-align:center;outline:none;font-family:inherit;}
+.dice-custom-row input:focus{border-color:var(--gold);}
+.dice-custom-row .d-sep{color:var(--muted);font-size:.9rem;font-weight:700;flex-shrink:0;}
+.dice-custom-row button{background:var(--gold);color:#0d0f14;border:none;border-radius:8px;
+  padding:8px 14px;font-weight:800;cursor:pointer;font-family:inherit;font-size:.82rem;flex-shrink:0;}
+#dice-log{max-height:130px;overflow-y:auto;border-top:1px solid var(--bord);padding-top:8px;scrollbar-width:thin;}
+.dice-entry{
+  display:flex;align-items:baseline;gap:6px;
+  padding:5px 8px;border-radius:6px;margin-bottom:4px;
+  background:var(--bg);border:1px solid transparent;
+  font-size:.75rem;
+}
+.dice-entry.mine{border-color:var(--bord);}
+.dice-entry .de-name{color:var(--muted);flex-shrink:0;}
+.dice-entry .de-dice{color:var(--text);flex-shrink:0;}
+.dice-entry .de-result{color:var(--gold);font-weight:800;font-size:.95rem;margin-left:auto;flex-shrink:0;}
+.dice-entry .de-rolls{color:var(--muted);font-size:.68rem;}
 
 /* Condition badges on map */
 .cond-badge{position:absolute;pointer-events:none;}
@@ -309,7 +336,7 @@ canvas{display:block;position:absolute;top:0;left:0;}
       <button class="tbtn"    id="ds-arrow" onclick="setDrawStyle('arrow')">→</button>
     </span>
     <span class="sep">|</span>
-    <!-- <button class="tbtn" onclick="toggleDice()">🎲</button> -->
+    <button class="tbtn" onclick="toggleDice()">🎲</button>
     <button class="tbtn" onclick="togglePanel('init-panel')">⚡ Init</button>
     <div id="mj-controls">
       <span class="sep">|</span>
@@ -358,7 +385,12 @@ canvas{display:block;position:absolute;top:0;left:0;}
 <div id="token-popup">
   <button class="tp-close" onclick="closeTokenPopup()">✕</button>
   <h4 id="tp-title">Pion</h4>
+  <!-- Infos lecture seule si pas propriétaire -->
+  <div id="tp-readonly-banner" style="display:none;background:#c8a96e18;border:1px solid #c8a96e44;border-radius:6px;padding:5px 9px;font-size:.72rem;color:var(--gold);margin-bottom:8px;">👁 Lecture seule</div>
   <div class="tp-row"><label>Nom</label><input type="text" id="tp-label" maxlength="20"/></div>
+  <div class="tp-row"><label>Couleur</label>
+    <div id="tp-color-strip" style="display:flex;gap:5px;flex-wrap:wrap;flex:1;"></div>
+  </div>
   <div class="tp-row"><label>PV</label>
     <div class="hp-pair">
       <input type="number" id="tp-hp" placeholder="—"/>
@@ -366,7 +398,7 @@ canvas{display:block;position:absolute;top:0;left:0;}
       <input type="number" id="tp-maxhp" placeholder="—"/>
     </div>
   </div>
-  <div class="tp-row"><label>Taille</label>
+  <div class="tp-row" id="tp-size-row"><label>Taille</label>
     <select id="tp-size">
       <option value="Tiny">Tiny (0.5×0.5)</option>
       <option value="Small">Small (1×1)</option>
@@ -401,20 +433,22 @@ canvas{display:block;position:absolute;top:0;left:0;}
 
 <!-- DICE -->
 <div id="dice-panel">
-  <div class="dice-row">
-    <button class="d-btn" onclick="rollDice(4)">d4</button>
-    <button class="d-btn" onclick="rollDice(6)">d6</button>
-    <button class="d-btn" onclick="rollDice(8)">d8</button>
-    <button class="d-btn" onclick="rollDice(10)">d10</button>
-    <button class="d-btn" onclick="rollDice(12)">d12</button>
-    <button class="d-btn" onclick="rollDice(20)">d20</button>
-    <button class="d-btn" onclick="rollDice(100)">d100</button>
+  <div class="dice-handle"></div>
+  <div class="dice-title">🎲 Lancer des dés</div>
+  <div class="dice-faces">
+    <button class="d-btn" onclick="rollDice(4)"><span class="d-icon">◆</span>d4</button>
+    <button class="d-btn" onclick="rollDice(6)"><span class="d-icon">⬛</span>d6</button>
+    <button class="d-btn" onclick="rollDice(8)"><span class="d-icon">◈</span>d8</button>
+    <button class="d-btn" onclick="rollDice(10)"><span class="d-icon">◇</span>d10</button>
+    <button class="d-btn" onclick="rollDice(12)"><span class="d-icon">⬡</span>d12</button>
+    <button class="d-btn" onclick="rollDice(20)" style="border-color:#c8a96e44;"><span class="d-icon" style="color:var(--gold)">⬟</span>d20</button>
+    <button class="d-btn" onclick="rollDice(100)"><span class="d-icon">○</span>d%</button>
   </div>
-  <div class="dice-custom">
-    <input type="number" id="dice-count" value="2" min="1" max="20"/>
-    <span style="color:var(--muted);font-size:.75rem">×</span>
-    <input type="number" id="dice-sides" value="6" min="2" max="1000"/>
-    <button onclick="rollCustomDice()">Lancer</button>
+  <div class="dice-custom-row">
+    <input type="number" id="dice-count" value="2" min="1" max="20" placeholder="nb"/>
+    <span class="d-sep">d</span>
+    <input type="number" id="dice-sides" value="6" min="2" max="1000" placeholder="faces"/>
+    <button onclick="rollCustomDice()">Lancer !</button>
   </div>
   <div id="dice-log"></div>
 </div>
@@ -689,22 +723,40 @@ function backToDash(){
 // ════════════════════════════════════════
 // WEBSOCKET
 // ════════════════════════════════════════
+let _heartbeatTimer=null;
+
 function connectWS(cb){
   const proto=location.protocol==="https:"?"wss":"ws";
   ws=new WebSocket(`${proto}://${location.host}`);
-  ws.onopen=cb;
-  ws.onmessage=e=>handleMsg(JSON.parse(e.data));
+  ws.onopen=()=>{
+    // Heartbeat côté client : répond au ping serveur (géré automatiquement par le browser)
+    // + envoie un ping applicatif toutes les 25s pour garder la connexion vivante
+    clearInterval(_heartbeatTimer);
+    _heartbeatTimer=setInterval(()=>{
+      if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:"PING_KEEPALIVE"}));
+    },25000);
+    cb();
+  };
+  ws.onmessage=e=>{
+    // Ignorer les messages non-JSON (pong binaire)
+    if(typeof e.data!=="string")return;
+    handleMsg(JSON.parse(e.data));
+  };
   ws.onclose=()=>{
+    clearInterval(_heartbeatTimer);
     if(document.getElementById("game").style.display!=="none"){
-      // Tentative de reconnexion automatique après 1.5s
       toast("Connexion perdue — reconnexion…");
-      setTimeout(()=>autoReconnect(),1500);
+      // Backoff exponentiel : 1.5s, 3s, 6s max
+      const delay=Math.min(6000,1500*Math.pow(2,_reconnectAttempts));
+      _reconnectAttempts++;
+      setTimeout(()=>autoReconnect(),delay);
     }
-  }
+  };
+  ws.onerror=()=>{}; // le onclose s'en charge
 }
+let _reconnectAttempts=0;
 function autoReconnect(){
   if(!lobbyCode)return;
-  // Reconnecter avec le même userId et lobbyCode
   if(isMJ&&authToken){
     connectWS(()=>send({type:"JOIN_CAMPAIGN",token:authToken,lobbyCode}));
   } else {
@@ -713,7 +765,7 @@ function autoReconnect(){
 }
 function send(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));}
 function startConnecting(){document.getElementById("connecting").style.display="flex";}
-function stopConnecting(){document.getElementById("connecting").style.display="none";}
+function stopConnecting(){document.getElementById("connecting").style.display="none";_reconnectAttempts=0;}
 
 // ════════════════════════════════════════
 // MESSAGES
@@ -1289,7 +1341,41 @@ function buildCondGrid(){
 
 function openTokenPopup(tokenId,sx,sy){
   tokenPopupTarget=tokenId;const t=tokens[tokenId];
+  const canEdit=t.userId===myId||isMJ;
+
   document.getElementById("tp-title").textContent=t.label||"Pion";
+  document.getElementById("tp-readonly-banner").style.display=canEdit?"none":"block";
+
+  // Couleur
+  const colorStrip=document.getElementById("tp-color-strip");
+  colorStrip.innerHTML="";
+  COLORS.forEach(c=>{
+    const s=document.createElement("div");
+    s.className="rc-sw";s.style.background=c;
+    if(c===t.color)s.classList.add("on");
+    s.style.width="20px";s.style.height="20px";s.style.borderRadius="50%";
+    s.style.border="2px solid transparent";s.style.cursor=canEdit?"pointer":"default";
+    s.style.transition="transform .15s,border-color .15s";s.style.flexShrink="0";
+    if(c===t.color){s.style.borderColor="#fff";s.style.transform="scale(1.25)";}
+    if(canEdit){s.onclick=()=>{
+      colorStrip.querySelectorAll("div").forEach(x=>{x.style.borderColor="transparent";x.style.transform="scale(1)";});
+      s.style.borderColor="#fff";s.style.transform="scale(1.25)";
+      t.color=c; // preview immédiat
+      drawAll();
+    };}
+    colorStrip.appendChild(s);
+  });
+
+  // Champs
+  const fields=["tp-label","tp-hp","tp-maxhp","tp-notes"];
+  fields.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!canEdit;});
+  document.getElementById("tp-size").disabled=!canEdit;
+  document.getElementById("tp-sizen").disabled=!canEdit;
+  document.querySelectorAll(".cond-btn").forEach(btn=>{
+    btn.classList.toggle("on",(t.conditions||[]).includes(btn.dataset.id));
+    btn.style.pointerEvents=canEdit?"auto":"none";btn.style.opacity=canEdit?"1":"0.5";
+  });
+
   document.getElementById("tp-label").value=t.label||"";
   document.getElementById("tp-hp").value=t.hp??"";
   document.getElementById("tp-maxhp").value=t.maxHp??"";
@@ -1297,43 +1383,23 @@ function openTokenPopup(tokenId,sx,sy){
   sizeEl.value=t.size||"Medium";
   document.getElementById("tp-sizen-row").style.display=t.size==="Custom"?"flex":"none";
   document.getElementById("tp-sizen").value=t.sizeN||1;
-  sizeEl.onchange=()=>{document.getElementById("tp-sizen-row").style.display=sizeEl.value==="Custom"?"flex":"none";};
-  document.querySelectorAll(".cond-btn").forEach(btn=>{
-    btn.classList.toggle("on",(t.conditions||[]).includes(btn.dataset.id));});
+  sizeEl.onchange=()=>{if(canEdit)document.getElementById("tp-sizen-row").style.display=sizeEl.value==="Custom"?"flex":"none";};
   document.getElementById("tp-notes").value=t.notes||"";
+  document.getElementById("tp-save").style.display=canEdit?"block":"none";
 
   const pop=document.getElementById("token-popup");
-  // Afficher d'abord pour mesurer la vraie taille
-  pop.style.visibility="hidden";
-  pop.style.display="block";
-  pop.style.left="0px";pop.style.top="0px";
-
+  pop.style.visibility="hidden";pop.style.display="block";pop.style.left="0px";pop.style.top="0px";
   const vw=window.innerWidth,vh=window.innerHeight;
   const pw=pop.offsetWidth,ph=pop.offsetHeight;
-
-  // Sur mobile (<540px) : bottom sheet géré par CSS, pas besoin de positionner
   if(vw<=540){pop.style.visibility="visible";return;}
-
-  // Desktop : placer près du clic, décaler si ça déborde
-  // Convertir sx/sy (coords canvas) en coords viewport
   const canvasRect=cMain.getBoundingClientRect();
-  const vx=canvasRect.left+sx, vy=canvasRect.top+sy;
-
-  let left=vx+12;
-  let top=vy-ph/2; // centré verticalement sur le clic
-
-  // Ne pas dépasser à droite
+  const vx=canvasRect.left+sx,vy=canvasRect.top+sy;
+  let left=vx+12,top=vy-ph/2;
   if(left+pw>vw-8)left=vx-pw-12;
-  // Ne pas dépasser à gauche
   if(left<8)left=8;
-  // Ne pas dépasser en bas
   if(top+ph>vh-8)top=vh-ph-8;
-  // Ne pas dépasser en haut
   if(top<8)top=8;
-
-  pop.style.left=left+"px";
-  pop.style.top=top+"px";
-  pop.style.visibility="visible";
+  pop.style.left=left+"px";pop.style.top=top+"px";pop.style.visibility="visible";
 }
 function closeTokenPopup(){document.getElementById("token-popup").style.display="none";tokenPopupTarget=null;}
 function saveTokenPopup(){
@@ -1458,27 +1524,58 @@ function nextTurn(){
 // ════════════════════════════════════════
 // DICE
 // ════════════════════════════════════════
-function toggleDice(){const p=document.getElementById("dice-panel");p.style.display=p.style.display==="block"?"none":"block";}
-function rollDice(sides){
-  const result=Math.floor(Math.random()*sides)+1;
-  const msg={type:"DICE_ROLL",dice:`d${sides}`,result,rolls:[result]};
-  send(msg);addDiceLog({...msg,name:myName});
+function toggleDice(){
+  const p=document.getElementById("dice-panel");
+  p.style.display=p.style.display==="block"?"none":"block";
 }
+
+function rollDice(sides){
+  // Petite animation sur le bouton
+  const result=Math.floor(Math.random()*sides)+1;
+  const isCrit=sides===20&&result===20;
+  const isFumble=sides===20&&result===1;
+  const msg={type:"DICE_ROLL",dice:`d${sides}`,result,rolls:[result],isCrit,isFumble};
+  send(msg);
+  addDiceLog({...msg,name:myName});
+}
+
 function rollCustomDice(){
   const count=Math.min(20,parseInt(document.getElementById("dice-count").value)||1);
   const sides=Math.min(1000,parseInt(document.getElementById("dice-sides").value)||6);
   const rolls=Array.from({length:count},()=>Math.floor(Math.random()*sides)+1);
   const result=rolls.reduce((a,b)=>a+b,0);
-  const msg={type:"DICE_ROLL",dice:`${count}d${sides}`,result,rolls};
-  send(msg);addDiceLog({...msg,name:myName});
+  const max=count*sides, min=count;
+  const isCrit=result===max;
+  const isFumble=result===min;
+  const msg={type:"DICE_ROLL",dice:`${count}d${sides}`,result,rolls,isCrit,isFumble};
+  send(msg);
+  addDiceLog({...msg,name:myName});
 }
+
 function addDiceLog(msg){
-  diceLog.unshift(msg);if(diceLog.length>20)diceLog.pop();
-  document.getElementById("dice-log").innerHTML=diceLog.map(e=>
-    `<div class="dice-entry"><span class="dname">${e.name}</span> <b>${e.dice}</b> → <span class="dval">${e.result}</span>
-    <span style="color:var(--muted);font-size:.65rem">(${e.rolls.join("+")})</span></div>`).join("");
+  diceLog.unshift(msg);if(diceLog.length>30)diceLog.pop();
+  const log=document.getElementById("dice-log");
+  log.innerHTML=diceLog.map((e,i)=>{
+    const isMine=e.name===myName;
+    const critStyle=e.isCrit?"color:var(--green);":"";
+    const fumbleStyle=e.isFumble?"color:var(--red);":"";
+    const resultStyle=critStyle||fumbleStyle;
+    const badge=e.isCrit?` <span style="background:#52c97a22;color:var(--green);border:1px solid var(--green);border-radius:4px;padding:1px 5px;font-size:.62rem">CRIT!</span>`
+                :e.isFumble?` <span style="background:#e0525222;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 5px;font-size:.62rem">FUMBLE</span>`:"";
+    const rollsText=e.rolls.length>1?`<span class="de-rolls">(${e.rolls.join("+")})</span>`:"";
+    return `<div class="dice-entry${isMine?" mine":""}">
+      <span class="de-name">${e.name}</span>
+      <span class="de-dice">${e.dice}</span>
+      ${rollsText}
+      <span class="de-result" style="${resultStyle}">${e.result}${badge}</span>
+    </div>`;
+  }).join("");
+  // Ouvrir le panel et scroll en haut
   document.getElementById("dice-panel").style.display="block";
-  toast(`🎲 ${msg.name} : ${msg.dice} = ${msg.result}`);
+  log.scrollTop=0;
+  // Toast discret
+  const badge=msg.isCrit?" 🎉 CRIT!":msg.isFumble?" 💀 FUMBLE":"";
+  toast(`🎲 ${msg.name} : ${msg.dice} = ${msg.result}${badge}`);
 }
 
 // ════════════════════════════════════════

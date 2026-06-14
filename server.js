@@ -188,7 +188,20 @@ const httpServer = http.createServer(async(req,res)=>{
 
 // ── WEBSOCKET ─────────────────────────────────────────────────────────────────
 const wss=new WebSocketServer({server:httpServer});
+
+// Heartbeat — détecte les connexions mortes toutes les 30s
+const HEARTBEAT_INTERVAL=30000;
+setInterval(()=>{
+  wss.clients.forEach(ws=>{
+    if(ws.isAlive===false){ws.terminate();return;}
+    ws.isAlive=false;
+    ws.ping();
+  });
+},HEARTBEAT_INTERVAL);
+
 wss.on("connection",ws=>{
+  ws.isAlive=true;
+  ws.on("pong",()=>{ws.isAlive=true;}); // réponse au ping serveur
   let currentLobby=null,currentId=null;
 
   ws.on("message",raw=>{
