@@ -246,6 +246,79 @@ canvas{display:block;position:absolute;top:0;left:0;}
 /* Condition badges on map */
 .cond-badge{position:absolute;pointer-events:none;}
 
+/* ── LIBRARY PANEL ── */
+#lib-panel{position:fixed;inset:0;z-index:60;display:none;align-items:stretch;}
+#lib-panel.open{display:flex;}
+#lib-backdrop{position:absolute;inset:0;background:#00000088;}
+#lib-sheet{
+  position:relative;z-index:1;
+  width:min(600px,100vw);margin-left:auto;
+  background:var(--surf);border-left:1px solid var(--bord);
+  display:flex;flex-direction:column;height:100%;
+  overflow:hidden;
+}
+#lib-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bord);flex-shrink:0;}
+#lib-header h2{font-size:.9rem;font-weight:700;color:var(--gold);flex:1;}
+.lib-tabs{display:flex;gap:0;border-bottom:1px solid var(--bord);flex-shrink:0;}
+.lib-tab{flex:1;padding:10px;background:none;border:none;color:var(--muted);
+  cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;
+  border-bottom:2px solid transparent;transition:all .15s;}
+.lib-tab.on{color:var(--gold);border-bottom-color:var(--gold);background:#c8a96e08;}
+.lib-body{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;}
+/* Cards */
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.lib-card{background:var(--bg);border:1px solid var(--bord);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;position:relative;}
+.lib-card:hover{border-color:var(--gold);}
+.lib-card-name{font-size:.85rem;font-weight:600;margin-bottom:4px;}
+.lib-card-meta{font-size:.7rem;color:var(--muted);}
+.lib-card-actions{display:flex;gap:5px;margin-top:8px;}
+.lib-card-btn{flex:1;background:var(--surf);border:1px solid var(--bord);border-radius:6px;
+  color:var(--text);padding:5px;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .15s;}
+.lib-card-btn:hover{border-color:var(--gold);color:var(--gold);}
+.lib-card-btn.danger:hover{border-color:var(--red);color:var(--red);}
+.lib-card-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;flex-shrink:0;}
+/* Editor */
+.lib-editor{background:var(--bg);border:1px solid var(--bord);border-radius:var(--r);padding:14px;margin-top:10px;}
+.lib-editor h3{font-size:.78rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+.lib-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.lib-field label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.lib-field input,.lib-field select,.lib-field textarea{background:var(--surf);border:1px solid var(--bord);
+  border-radius:6px;color:var(--text);padding:7px 10px;font-size:.82rem;outline:none;font-family:inherit;width:100%;}
+.lib-field input:focus,.lib-field select:focus,.lib-field textarea:focus{border-color:var(--gold);}
+.lib-field textarea{resize:vertical;min-height:52px;}
+/* Weapon steps */
+.weapon-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
+.weapon-step{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:10px 12px;position:relative;}
+.weapon-step-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.weapon-step-num{width:20px;height:20px;border-radius:50%;background:var(--gold);color:#0d0f14;
+  font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.weapon-step-type{font-size:.75rem;color:var(--gold);font-weight:600;}
+.step-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.step-row label{font-size:.68rem;color:var(--muted);white-space:nowrap;}
+.step-row input,.step-row select{background:var(--bg);border:1px solid var(--bord);border-radius:5px;
+  color:var(--text);padding:4px 7px;font-size:.78rem;outline:none;font-family:inherit;}
+.step-row input[type=number]{width:56px;}
+.step-row select{cursor:pointer;}
+.step-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;}
+.step-del:hover{color:var(--red);}
+.add-step-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.add-step-btn{background:var(--bg);border:1px solid var(--bord);border-radius:6px;
+  color:var(--muted);padding:5px 10px;font-size:.72rem;cursor:pointer;font-family:inherit;transition:all .15s;}
+.add-step-btn:hover{border-color:var(--gold);color:var(--gold);}
+.lib-save-btn{width:100%;background:var(--gold);color:#0d0f14;border:none;border-radius:var(--r);
+  padding:10px;font-weight:800;cursor:pointer;font-family:inherit;font-size:.85rem;margin-top:8px;}
+/* Weapon roll result */
+#weapon-roll-panel{position:fixed;bottom:80px;right:14px;background:var(--surf);border:1px solid var(--bord);
+  border-radius:var(--r);padding:14px;display:none;z-index:80;min-width:200px;max-width:280px;
+  box-shadow:0 4px 24px #00000088;}
+#weapon-roll-panel h4{color:var(--gold);font-size:.78rem;font-weight:700;margin-bottom:8px;}
+.wr-step{padding:5px 0;border-bottom:1px solid var(--bord);font-size:.78rem;}
+.wr-step:last-child{border:none;}
+.wr-step-label{color:var(--muted);font-size:.7rem;}
+.wr-step-result{font-size:1rem;font-weight:800;color:var(--gold);}
+.wr-step-detail{color:var(--muted);font-size:.68rem;}
+.wr-step-fail{color:var(--red);}
+
 /* Toast */
 #toast{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:6px 15px;font-size:.76rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap;}
 #toast.show{opacity:1;}
@@ -345,6 +418,7 @@ canvas{display:block;position:absolute;top:0;left:0;}
       <button class="tbtn danger" onclick="clearAll()">✕</button>
     </div>
     <span class="sep">|</span>
+    <button class="tbtn" id="lib-btn" onclick="openLibrary()" style="display:none">📚</button>
     <button class="tbtn" onclick="backToDash()" style="color:var(--muted)">🏠</button>
   </div>
 
@@ -471,6 +545,31 @@ canvas{display:block;position:absolute;top:0;left:0;}
     <button onclick="obsFlip()">⇔ Miroir</button>
     <button class="del" onclick="deleteSelectedObs()">🗑 Suppr.</button>
   </div>
+</div>
+
+<!-- LIBRARY PANEL -->
+<div id="lib-panel">
+  <div id="lib-backdrop" onclick="closeLibrary()"></div>
+  <div id="lib-sheet">
+    <div id="lib-header">
+      <h2>📚 Ma bibliothèque</h2>
+      <button class="sp-close" onclick="closeLibrary()">✕</button>
+    </div>
+    <div class="lib-tabs">
+      <button class="lib-tab on" id="lib-tab-tokens" onclick="switchLibTab('tokens')">🔵 Pions sauvegardés</button>
+      <button class="lib-tab" id="lib-tab-weapons" onclick="switchLibTab('weapons')">⚔ Armes & Attaques</button>
+    </div>
+    <div class="lib-body" id="lib-body"></div>
+  </div>
+</div>
+
+<!-- WEAPON ROLL RESULT -->
+<div id="weapon-roll-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <h4 id="wr-weapon-name">Attaque</h4>
+    <button onclick="document.getElementById('weapon-roll-panel').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem">✕</button>
+  </div>
+  <div id="wr-steps"></div>
 </div>
 
 <div id="toast"></div>
@@ -834,6 +933,8 @@ function enterGame(){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById("code-badge").textContent=lobbyCode;
   if(isMJ)showMJControls();
+  // Afficher le bouton bibliothèque si connecté
+  if(authToken)document.getElementById("lib-btn").style.display="";
   buildColors(); buildCondGrid(); buildObsBank(); updatePlayers(); renderInitiatives();
   resize(); resetView(); drawAll();
 }
@@ -1555,27 +1656,37 @@ function rollCustomDice(){
 function addDiceLog(msg){
   diceLog.unshift(msg);if(diceLog.length>30)diceLog.pop();
   const log=document.getElementById("dice-log");
-  log.innerHTML=diceLog.map((e,i)=>{
+  log.innerHTML=diceLog.map(e=>{
     const isMine=e.name===myName;
+    const isWeapon=typeof e.result==="string";
+    if(isWeapon){
+      return `<div class="dice-entry${isMine?" mine":""}">
+        <span class="de-name">${e.name}</span>
+        <span class="de-dice">${e.dice}</span>
+        <span class="de-result" style="font-size:.75rem;color:var(--text)">${e.result}</span>
+      </div>`;
+    }
     const critStyle=e.isCrit?"color:var(--green);":"";
     const fumbleStyle=e.isFumble?"color:var(--red);":"";
-    const resultStyle=critStyle||fumbleStyle;
     const badge=e.isCrit?` <span style="background:#52c97a22;color:var(--green);border:1px solid var(--green);border-radius:4px;padding:1px 5px;font-size:.62rem">CRIT!</span>`
                 :e.isFumble?` <span style="background:#e0525222;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 5px;font-size:.62rem">FUMBLE</span>`:"";
-    const rollsText=e.rolls.length>1?`<span class="de-rolls">(${e.rolls.join("+")})</span>`:"";
+    const rolls=e.rolls||[];
+    const rollsText=rolls.length>1?`<span class="de-rolls">(${rolls.join("+")})</span>`:"";
     return `<div class="dice-entry${isMine?" mine":""}">
       <span class="de-name">${e.name}</span>
       <span class="de-dice">${e.dice}</span>
       ${rollsText}
-      <span class="de-result" style="${resultStyle}">${e.result}${badge}</span>
+      <span class="de-result" style="${critStyle||fumbleStyle}">${e.result}${badge}</span>
     </div>`;
   }).join("");
-  // Ouvrir le panel et scroll en haut
   document.getElementById("dice-panel").style.display="block";
   log.scrollTop=0;
-  // Toast discret
-  const badge=msg.isCrit?" 🎉 CRIT!":msg.isFumble?" 💀 FUMBLE":"";
-  toast(`🎲 ${msg.name} : ${msg.dice} = ${msg.result}${badge}`);
+  if(typeof msg.result!=="string"){
+    const badge=msg.isCrit?" 🎉 CRIT!":msg.isFumble?" 💀 FUMBLE":"";
+    toast(`🎲 ${msg.name} : ${msg.dice} = ${msg.result}${badge}`);
+  } else {
+    toast(`⚔ ${msg.name} utilise ${msg.dice}`);
+  }
 }
 
 // ════════════════════════════════════════
@@ -1668,6 +1779,360 @@ function deleteSelectedObs(){
   closeObsPopup();drawAll();
 }
 function clearObstacles(){obstacles={};send({type:"CLEAR_OBSTACLES"});drawAll();}
+
+// ════════════════════════════════════════
+// LIBRARY
+// ════════════════════════════════════════
+let libTab="tokens";
+let libTokens=[], libWeapons=[];
+let editingToken=null, editingWeapon=null;
+let weaponSteps=[]; // steps en cours d'édition
+
+async function apiLib(method,path,body){
+  const res=await fetch(path,{method,headers:{"Content-Type":"application/json",Authorization:`Bearer ${authToken}`},body:body?JSON.stringify(body):undefined});
+  return res.json();
+}
+
+function openLibrary(){
+  if(!authToken){toast("Connecte-toi pour accéder à la bibliothèque.");return;}
+  document.getElementById("lib-panel").classList.add("open");
+  loadLibrary();
+}
+function closeLibrary(){document.getElementById("lib-panel").classList.remove("open");editingToken=null;editingWeapon=null;}
+function switchLibTab(tab){
+  libTab=tab;
+  document.querySelectorAll(".lib-tab").forEach(t=>t.classList.remove("on"));
+  document.getElementById("lib-tab-"+tab).classList.add("on");
+  renderLibrary();
+}
+
+async function loadLibrary(){
+  const [tk,wp]=await Promise.all([apiLib("GET","/api/library/tokens"),apiLib("GET","/api/library/weapons")]);
+  libTokens=tk.map?tk:[]; libWeapons=wp.map?wp:[];
+  libTokens.forEach(t=>{try{t.data=typeof t.data==="string"?JSON.parse(t.data):t.data;}catch(e){}});
+  libWeapons.forEach(w=>{try{w.data=typeof w.data==="string"?JSON.parse(w.data):w.data;}catch(e){}});
+  renderLibrary();
+}
+
+function renderLibrary(){
+  const body=document.getElementById("lib-body");
+  body.innerHTML="";
+  if(libTab==="tokens") renderTokensLib(body);
+  else renderWeaponsLib(body);
+}
+
+// ── TOKENS LIBRARY ────────────────────────────────────────────────────────────
+function renderTokensLib(body){
+  // Bouton nouveau
+  const newBtn=document.createElement("button");
+  newBtn.className="lib-save-btn";newBtn.style.marginBottom="12px";
+  newBtn.textContent="＋ Nouveau pion";
+  newBtn.onclick=()=>{editingToken={id:null};renderTokensLib(body);};
+  body.appendChild(newBtn);
+
+  // Grille des pions
+  const grid=document.createElement("div");grid.className="lib-grid";
+  libTokens.forEach(t=>{
+    const card=document.createElement("div");card.className="lib-card";
+    const color=t.data?.color||"#5c7cff";
+    card.innerHTML=`<div class="lib-card-name">
+      <span class="lib-card-dot" style="background:${color}"></span>${t.name}</div>
+      <div class="lib-card-meta">${t.data?.size||"Medium"} · PV ${t.data?.maxHp||"—"}</div>
+      ${t.data?.conditions?.length?`<div class="lib-card-meta" style="margin-top:3px">${t.data.conditions.slice(0,4).map(c=>DND_CONDITIONS.find(d=>d.id===c)?.icon||"").join(" ")}</div>`:""}
+      <div class="lib-card-actions">
+        <button class="lib-card-btn" onclick="spawnLibToken(${t.id})">🗺 Placer</button>
+        <button class="lib-card-btn" onclick="editLibToken(${t.id})">✏️</button>
+        <button class="lib-card-btn danger" onclick="deleteLibToken(${t.id})">🗑</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+
+  // Éditeur
+  if(editingToken!==null){
+    const ed=document.createElement("div");ed.className="lib-editor";
+    const isNew=!editingToken.id;
+    const d=editingToken.data||{};
+    ed.innerHTML=`<h3>${isNew?"Nouveau pion":"Modifier le pion"}</h3>
+      <div class="lib-field"><label>Nom</label><input id="le-name" value="${editingToken.name||""}" placeholder="Ex: Gobelin archer"/></div>
+      <div class="lib-field"><label>Couleur</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="le-colors">
+          ${COLORS.map(c=>`<div onclick="leSelectColor('${c}')" style="width:24px;height:24px;border-radius:50%;background:${c};border:2px solid ${c===(d.color||COLORS[0])?"#fff":"transparent"};cursor:pointer;transition:transform .15s" id="le-col-${c.replace('#','')}"></div>`).join("")}
+        </div>
+      </div>
+      <div class="lib-field"><label>Taille</label>
+        <select id="le-size">
+          ${["Tiny","Small","Medium","Large","Huge","Gargantuan"].map(s=>`<option${s===(d.size||"Medium")?" selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="lib-field"><label>PV max</label><input type="number" id="le-maxhp" value="${d.maxHp||""}" placeholder="—"/></div>
+      <div class="lib-field"><label>Notes</label><textarea id="le-notes">${d.notes||""}</textarea></div>
+      <div class="lib-field"><label>Conditions</label>
+        <div style="display:flex;flex-wrap:wrap;gap:5px" id="le-conds">
+          ${DND_CONDITIONS.map(c=>`<button class="cond-btn${(d.conditions||[]).includes(c.id)?" on":""}" data-id="${c.id}" data-color="${c.color}" onclick="this.classList.toggle('on')">${c.icon} ${c.label}</button>`).join("")}
+        </div>
+      </div>
+      <button class="lib-save-btn" onclick="saveLibToken()">💾 Enregistrer</button>
+      <button onclick="editingToken=null;renderLibrary()" style="width:100%;background:transparent;border:1px solid var(--bord);border-radius:var(--r);color:var(--muted);padding:8px;cursor:pointer;font-family:inherit;margin-top:6px">Annuler</button>`;
+    body.appendChild(ed);
+    // Stocker couleur sélectionnée
+    window._leColor=d.color||COLORS[0];
+  }
+}
+
+function leSelectColor(c){
+  window._leColor=c;
+  document.querySelectorAll("#le-colors div").forEach(el=>{el.style.borderColor="transparent";el.style.transform="scale(1)";});
+  const el=document.getElementById("le-col-"+c.replace("#",""));
+  if(el){el.style.borderColor="#fff";el.style.transform="scale(1.2)";}
+}
+
+function editLibToken(id){
+  editingToken={...libTokens.find(t=>t.id===id)};
+  renderLibrary();
+  setTimeout(()=>document.querySelector(".lib-editor")?.scrollIntoView({behavior:"smooth"}),100);
+}
+
+async function saveLibToken(){
+  const name=document.getElementById("le-name").value.trim();
+  if(!name){toast("Donne un nom au pion.");return;}
+  const data={
+    color:window._leColor||COLORS[0],
+    size:document.getElementById("le-size").value,
+    maxHp:parseFloat(document.getElementById("le-maxhp").value)||null,
+    notes:document.getElementById("le-notes").value,
+    conditions:[...document.querySelectorAll("#le-conds .cond-btn.on")].map(b=>b.dataset.id),
+  };
+  if(editingToken.id){
+    await apiLib("PUT",`/api/library/tokens/${editingToken.id}`,{name,data});
+    const idx=libTokens.findIndex(t=>t.id===editingToken.id);
+    if(idx>=0)libTokens[idx]={...libTokens[idx],name,data};
+  } else {
+    const res=await apiLib("POST","/api/library/tokens",{name,data});
+    libTokens.push({id:res.id,name,data});
+  }
+  editingToken=null;toast("✅ Pion sauvegardé !");renderLibrary();
+}
+
+async function deleteLibToken(id){
+  if(!confirm("Supprimer ce pion ?"))return;
+  await apiLib("DELETE",`/api/library/tokens/${id}`);
+  libTokens=libTokens.filter(t=>t.id!==id);renderLibrary();
+}
+
+function spawnLibToken(id){
+  const t=libTokens.find(x=>x.id===id);if(!t)return;
+  // Place au centre de la vue actuelle
+  const cx=s2w(cMain.width/2,cMain.height/2);
+  const tid="t_"+myId+"_"+Date.now();
+  const sizeN=DND_SIZES[t.data.size||"Medium"]?.n||1;
+  const newToken={id:tid,tokenId:tid,
+    x:snap(cx.x-sizeN/2),y:snap(cx.y-sizeN/2),
+    color:t.data.color||activeColor,
+    label:t.name,userId:myId,ranges:[],
+    notes:t.data.notes||"",
+    hp:t.data.maxHp||null,maxHp:t.data.maxHp||null,
+    size:t.data.size||"Medium",sizeN,
+    conditions:t.data.conditions||[]};
+  tokens[tid]=newToken;
+  send({type:"SET_TOKEN",...newToken,tokenId:tid});
+  closeLibrary();drawAll();
+  toast(`🔵 ${t.name} placé sur la carte`);
+}
+
+// ── WEAPONS LIBRARY ───────────────────────────────────────────────────────────
+function renderWeaponsLib(body){
+  const newBtn=document.createElement("button");
+  newBtn.className="lib-save-btn";newBtn.style.marginBottom="12px";
+  newBtn.textContent="＋ Nouvelle arme / attaque";
+  newBtn.onclick=()=>{editingWeapon={id:null,data:{steps:[]}};weaponSteps=[];renderLibrary();};
+  body.appendChild(newBtn);
+
+  const grid=document.createElement("div");grid.className="lib-grid";
+  libWeapons.forEach(w=>{
+    const steps=w.data?.steps||[];
+    const card=document.createElement("div");card.className="lib-card";
+    card.innerHTML=`<div class="lib-card-name">⚔ ${w.name}</div>
+      <div class="lib-card-meta">${steps.length} étape(s)</div>
+      <div class="lib-card-meta" style="margin-top:3px;font-size:.68rem">${steps.map(s=>s.type==="roll"?`${s.count}d${s.sides}`:s.type==="condition"?`Si ≥${s.threshold}`:s.type==="flat"?`+${s.value}`:"").filter(Boolean).join(" → ")}</div>
+      <div class="lib-card-actions">
+        <button class="lib-card-btn" onclick="rollWeapon(${w.id})">🎲 Lancer</button>
+        <button class="lib-card-btn" onclick="editLibWeapon(${w.id})">✏️</button>
+        <button class="lib-card-btn danger" onclick="deleteLibWeapon(${w.id})">🗑</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+
+  if(editingWeapon!==null){
+    const ed=document.createElement("div");ed.className="lib-editor";
+    if(!weaponSteps.length&&editingWeapon.data?.steps?.length)weaponSteps=[...editingWeapon.data.steps];
+    ed.innerHTML=`<h3>${!editingWeapon.id?"Nouvelle arme":"Modifier l'arme"}</h3>
+      <div class="lib-field"><label>Nom</label><input id="lw-name" value="${editingWeapon.name||""}" placeholder="Ex: Épée longue"/></div>
+      <div class="lib-field"><label>Description</label><textarea id="lw-desc" placeholder="Arme de corps-à-corps, 1d8 tranchant…">${editingWeapon.data?.desc||""}</textarea></div>
+      <div class="lib-field">
+        <label>Étapes d'attaque
+          <span style="color:var(--muted);font-size:.65rem;font-weight:400;display:block;margin-top:2px">Exemple : jet d'attaque → si ≥ seuil → dégâts</span>
+        </label>
+        <div class="weapon-steps" id="lw-steps"></div>
+        <div class="add-step-btns">
+          <button class="add-step-btn" onclick="addWeaponStep('roll')">＋ Jet de dés</button>
+          <button class="add-step-btn" onclick="addWeaponStep('condition')">＋ Condition (si ≥ N)</button>
+          <button class="add-step-btn" onclick="addWeaponStep('flat')">＋ Valeur fixe</button>
+          <button class="add-step-btn" onclick="addWeaponStep('dmg')">＋ Jet de dégâts</button>
+        </div>
+      </div>
+      <button class="lib-save-btn" onclick="saveLibWeapon()">💾 Enregistrer</button>
+      <button onclick="editingWeapon=null;weaponSteps=[];renderLibrary()" style="width:100%;background:transparent;border:1px solid var(--bord);border-radius:var(--r);color:var(--muted);padding:8px;cursor:pointer;font-family:inherit;margin-top:6px">Annuler</button>`;
+    body.appendChild(ed);
+    renderWeaponSteps();
+  }
+}
+
+function renderWeaponSteps(){
+  const container=document.getElementById("lw-steps");if(!container)return;
+  container.innerHTML="";
+  weaponSteps.forEach((step,i)=>{
+    const div=document.createElement("div");div.className="weapon-step";
+    const typeLabels={roll:"🎲 Jet de dés",condition:"🔀 Condition",flat:"➕ Valeur fixe",dmg:"💥 Jet de dégâts"};
+    let inner=`<div class="weapon-step-header">
+        <div class="weapon-step-num">${i+1}</div>
+        <div class="weapon-step-type">${typeLabels[step.type]||step.type}</div>
+        <button class="step-del" onclick="removeWeaponStep(${i})">✕</button>
+      </div>`;
+    if(step.type==="roll"||step.type==="dmg"){
+      inner+=`<div class="step-row">
+        <label>Dés</label>
+        <input type="number" min="1" max="20" value="${step.count||1}" onchange="weaponSteps[${i}].count=+this.value"/>
+        <span style="color:var(--muted)">d</span>
+        <input type="number" min="2" value="${step.sides||6}" onchange="weaponSteps[${i}].sides=+this.value"/>
+        <label style="margin-left:6px">Bonus</label>
+        <input type="number" value="${step.bonus||0}" onchange="weaponSteps[${i}].bonus=+this.value" style="width:46px"/>
+      </div>
+      <div class="step-row">
+        <label>Label</label>
+        <input type="text" value="${step.label||""}" placeholder="Ex: Jet d'attaque" onchange="weaponSteps[${i}].label=this.value" style="flex:1;min-width:0"/>
+      </div>`;
+    } else if(step.type==="condition"){
+      inner+=`<div class="step-row">
+        <label>Résultat de l'étape</label>
+        <select onchange="weaponSteps[${i}].refStep=+this.value">
+          ${weaponSteps.slice(0,i).map((s,j)=>`<option value="${j}"${step.refStep===j?" selected":""}>Étape ${j+1}</option>`).join("")||"<option>— aucune étape avant —</option>"}
+        </select>
+        <label>≥</label>
+        <input type="number" value="${step.threshold||10}" onchange="weaponSteps[${i}].threshold=+this.value" style="width:52px"/>
+      </div>
+      <div class="step-row">
+        <label>Si oui → étapes</label>
+        <input type="text" value="${(step.onSuccess||[]).join(',')}" placeholder="Ex: 2,3" onchange="weaponSteps[${i}].onSuccess=this.value.split(',').map(Number).filter(Boolean)" style="width:80px"/>
+        <label>Si non → étapes</label>
+        <input type="text" value="${(step.onFail||[]).join(',')}" placeholder="Ex: stop" onchange="weaponSteps[${i}].onFail=this.value.split(',').map(Number).filter(Boolean)" style="width:80px"/>
+      </div>`;
+    } else if(step.type==="flat"){
+      inner+=`<div class="step-row">
+        <label>Valeur</label>
+        <input type="number" value="${step.value||0}" onchange="weaponSteps[${i}].value=+this.value"/>
+        <label style="margin-left:6px">Label</label>
+        <input type="text" value="${step.label||""}" placeholder="Ex: Bonus Force" onchange="weaponSteps[${i}].label=this.value" style="flex:1;min-width:0"/>
+      </div>`;
+    }
+    div.innerHTML=inner;
+    container.appendChild(div);
+  });
+}
+
+function addWeaponStep(type){
+  const defaults={roll:{type:"roll",count:1,sides:20,bonus:0,label:"Jet d'attaque"},
+    condition:{type:"condition",refStep:Math.max(0,weaponSteps.length-1),threshold:10,onSuccess:[],onFail:[]},
+    flat:{type:"flat",value:0,label:"Bonus"},
+    dmg:{type:"dmg",count:1,sides:6,bonus:0,label:"Dégâts"}};
+  weaponSteps.push({...defaults[type]});
+  renderWeaponSteps();
+}
+
+function removeWeaponStep(i){weaponSteps.splice(i,1);renderWeaponSteps();}
+
+async function saveLibWeapon(){
+  const name=document.getElementById("lw-name").value.trim();
+  if(!name){toast("Donne un nom à l'arme.");return;}
+  const data={desc:document.getElementById("lw-desc").value,steps:[...weaponSteps]};
+  if(editingWeapon.id){
+    await apiLib("PUT",`/api/library/weapons/${editingWeapon.id}`,{name,data});
+    const idx=libWeapons.findIndex(w=>w.id===editingWeapon.id);
+    if(idx>=0)libWeapons[idx]={...libWeapons[idx],name,data};
+  } else {
+    const res=await apiLib("POST","/api/library/weapons",{name,data});
+    libWeapons.push({id:res.id,name,data});
+  }
+  editingWeapon=null;weaponSteps=[];toast("✅ Arme sauvegardée !");renderLibrary();
+}
+
+async function deleteLibWeapon(id){
+  if(!confirm("Supprimer cette arme ?"))return;
+  await apiLib("DELETE",`/api/library/weapons/${id}`);
+  libWeapons=libWeapons.filter(w=>w.id!==id);renderLibrary();
+}
+
+function editLibWeapon(id){
+  editingWeapon={...libWeapons.find(w=>w.id===id)};
+  weaponSteps=[...(editingWeapon.data?.steps||[])];
+  renderLibrary();
+  setTimeout(()=>document.querySelector(".lib-editor")?.scrollIntoView({behavior:"smooth"}),100);
+}
+
+function rollWeapon(id){
+  const w=libWeapons.find(x=>x.id===id);if(!w)return;
+  const steps=w.data?.steps||[];
+  const results=[];
+  const skip=new Set();
+
+  steps.forEach((step,i)=>{
+    if(skip.has(i)){results.push(null);return;}
+    if(step.type==="roll"||step.type==="dmg"){
+      const rolls=Array.from({length:step.count||1},()=>Math.floor(Math.random()*(step.sides||6))+1);
+      const total=rolls.reduce((a,b)=>a+b,0)+(step.bonus||0);
+      results.push({step,total,rolls,label:step.label||step.type});
+    } else if(step.type==="flat"){
+      results.push({step,total:step.value||0,rolls:[],label:step.label||"Fixe"});
+    } else if(step.type==="condition"){
+      const ref=results[step.refStep??0];
+      const val=ref?.total??0;
+      const pass=val>=(step.threshold||10);
+      results.push({step,total:val,pass,label:`${val} ≥ ${step.threshold||10} ?`});
+      if(!pass&&step.onFail){step.onFail.forEach(n=>{if(n>=1&&n<=steps.length)skip.add(n-1);});}
+      if(pass&&step.onSuccess){/* les étapes onSuccess s'exécutent normalement */}
+    } else results.push(null);
+  });
+
+  // Afficher résultat
+  const panel=document.getElementById("weapon-roll-panel");
+  document.getElementById("wr-weapon-name").textContent=`⚔ ${w.name}`;
+  const stepsEl=document.getElementById("wr-steps");
+  stepsEl.innerHTML=results.map((r,i)=>{
+    if(!r)return `<div class="wr-step"><span class="wr-step-label">Étape ${i+1}</span> <span style="color:var(--muted)">ignorée</span></div>`;
+    if(r.step.type==="condition"){
+      return `<div class="wr-step">
+        <div class="wr-step-label">${r.label}</div>
+        <div class="${r.pass?"wr-step-result":"wr-step-fail"}">${r.pass?"✅ Succès":"❌ Échec"}</div>
+      </div>`;
+    }
+    const detail=r.rolls.length>1?`(${r.rolls.join("+")}${r.step.bonus?`+${r.step.bonus}`:""})`:
+                 r.step.bonus?`+${r.step.bonus} bonus`:"";
+    return `<div class="wr-step">
+      <div class="wr-step-label">${r.label}</div>
+      <div class="wr-step-result">${r.total}</div>
+      ${detail?`<div class="wr-step-detail">${detail}</div>`:""}
+    </div>`;
+  }).join("");
+  panel.style.display="block";
+
+  // Broadcast le résultat
+  const summary=results.filter(Boolean).map(r=>r.step.type==="condition"?`${r.label} → ${r.pass?"✅":"❌"}`:`${r.label}: ${r.total}`).join(" | ");
+  send({type:"DICE_ROLL",dice:w.name,result:results.filter(r=>r&&r.step.type!=="condition").reduce((a,r)=>a+(r.total||0),0),
+    rolls:results.filter(r=>r&&r.rolls?.length).flatMap(r=>r.rolls),
+    isCrit:false,isFumble:false});
+  addDiceLog({name:myName,dice:`⚔ ${w.name}`,result:summary,rolls:[],isCrit:false,isFumble:false});
+}
 
 // ════════════════════════════════════════
 // UI HELPERS

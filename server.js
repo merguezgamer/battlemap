@@ -57,6 +57,20 @@ async function initDb(){
       state TEXT NOT NULL DEFAULT '{}',
       updated_at INTEGER DEFAULT(strftime('%s','now'))
     );
+    CREATE TABLE IF NOT EXISTS tokens_library(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      data TEXT NOT NULL,
+      updated_at INTEGER DEFAULT(strftime('%s','now'))
+    );
+    CREATE TABLE IF NOT EXISTS weapons_library(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      data TEXT NOT NULL,
+      updated_at INTEGER DEFAULT(strftime('%s','now'))
+    );
   `);
   saveDb();
   console.log(fs.existsSync(DB_FILE)?"💾  DB chargée":"💾  Nouvelle DB créée");
@@ -174,6 +188,61 @@ const httpServer = http.createServer(async(req,res)=>{
     const id=parseInt(url.pathname.split("/").pop());
     const{name}=JSON.parse(body||"{}");
     if(name)dbRun("UPDATE campaigns SET name=? WHERE id=? AND user_id=?",[name,id,s.user_id]);
+    return json(res,200,{ok:true});
+  }
+
+  // ── LIBRARY : TOKENS ─────────────────────────────────────────────────────────
+  if(req.method==="GET"&&url.pathname==="/api/library/tokens"){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    return json(res,200,dbAll("SELECT id,name,data,updated_at FROM tokens_library WHERE user_id=? ORDER BY name",[s.user_id]));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/library/tokens"){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const{name,data}=JSON.parse(body||"{}");
+    if(!name||!data)return json(res,400,{error:"Nom et données requis."});
+    dbRun("INSERT INTO tokens_library(user_id,name,data)VALUES(?,?,?)",[s.user_id,name,JSON.stringify(data)]);
+    const row=dbGet("SELECT id FROM tokens_library WHERE user_id=? ORDER BY id DESC LIMIT 1",[s.user_id]);
+    return json(res,200,{id:row.id,name});
+  }
+  if(req.method==="PUT"&&url.pathname.match(/^\/api\/library\/tokens\/\d+$/)){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const id=parseInt(url.pathname.split("/").pop());
+    const{name,data}=JSON.parse(body||"{}");
+    dbRun("UPDATE tokens_library SET name=?,data=?,updated_at=strftime('%s','now') WHERE id=? AND user_id=?",
+      [name,JSON.stringify(data),id,s.user_id]);
+    return json(res,200,{ok:true});
+  }
+  if(req.method==="DELETE"&&url.pathname.match(/^\/api\/library\/tokens\/\d+$/)){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const id=parseInt(url.pathname.split("/").pop());
+    dbRun("DELETE FROM tokens_library WHERE id=? AND user_id=?",[id,s.user_id]);
+    return json(res,200,{ok:true});
+  }
+
+  // ── LIBRARY : WEAPONS ─────────────────────────────────────────────────────────
+  if(req.method==="GET"&&url.pathname==="/api/library/weapons"){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    return json(res,200,dbAll("SELECT id,name,data,updated_at FROM weapons_library WHERE user_id=? ORDER BY name",[s.user_id]));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/library/weapons"){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const{name,data}=JSON.parse(body||"{}");
+    if(!name||!data)return json(res,400,{error:"Nom et données requis."});
+    dbRun("INSERT INTO weapons_library(user_id,name,data)VALUES(?,?,?)",[s.user_id,name,JSON.stringify(data)]);
+    const row=dbGet("SELECT id FROM weapons_library WHERE user_id=? ORDER BY id DESC LIMIT 1",[s.user_id]);
+    return json(res,200,{id:row.id,name});
+  }
+  if(req.method==="PUT"&&url.pathname.match(/^\/api\/library\/weapons\/\d+$/)){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const id=parseInt(url.pathname.split("/").pop());
+    const{name,data}=JSON.parse(body||"{}");
+    dbRun("UPDATE weapons_library SET name=?,data=?,updated_at=strftime('%s','now') WHERE id=? AND user_id=?",[name,JSON.stringify(data),id,s.user_id]);
+    return json(res,200,{ok:true});
+  }
+  if(req.method==="DELETE"&&url.pathname.match(/^\/api\/library\/weapons\/\d+$/)){
+    const s=getSession(req);if(!s)return json(res,401,{error:"Non connecté."});
+    const id=parseInt(url.pathname.split("/").pop());
+    dbRun("DELETE FROM weapons_library WHERE id=? AND user_id=?",[id,s.user_id]);
     return json(res,200,{ok:true});
   }
 
@@ -330,14 +399,19 @@ wss.on("connection",ws=>{
         scheduleSave(currentLobby);break;
       }
 
+      case"PING_KEEPALIVE": break; // heartbeat client → ignorer
+
       case"PING":
         if(!lobby)return;
         broadcastAll(currentLobby,{type:"PING",x:msg.x,y:msg.y,color:msg.color});break;
 
       case"DICE_ROLL":
         if(!lobby)return;
-        broadcastAll(currentLobby,{type:"DICE_ROLL",userId:currentId,
-          name:lobby.playerNames[currentId],dice:msg.dice,result:msg.result,rolls:msg.rolls});break;
+        // broadcast aux autres seulement — l'expéditeur gère son log localement
+        broadcast(currentLobby,{type:"DICE_ROLL",userId:currentId,
+          name:lobby.playerNames[currentId],dice:msg.dice,result:msg.result,
+          rolls:msg.rolls,isCrit:msg.isCrit,isFumble:msg.isFumble},currentId);
+        break;
 
       case"SET_IMAGE":
         if(!lobby||lobby.hostId!==currentId)return;
